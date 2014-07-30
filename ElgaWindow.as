@@ -984,7 +984,7 @@ class ElgaWindow extends MovieClip {
 			" brun-rouge",
 			" camouflage",
 			" chocolat",
-			" cyan/gris",
+			" cyan/gris", " cyan",
 			" dorées",
 			" grise", "gris", "grises", "gris-bleu", "gris-vert", 
 			" jaune", "jaunes",
@@ -1042,12 +1042,12 @@ class ElgaWindow extends MovieClip {
 			" camouflage", 
 			" chocolate",
 			" coral",
-			" cyan/grey",
+			" cyan/grey", " cyan",
 			" gold", 
 			" green", "dark green", " light green", " bright green", " neon green", " deep green",
 			" military green", " light military green", " dark military green",
 			" grey", " dark grey", " light grey", " deep grey",
-			" kahki",
+			" khaki",
 			" lilac", 
 			" magenta",
 			" mint", 
@@ -1061,7 +1061,7 @@ class ElgaWindow extends MovieClip {
 			" red", " light red", " dark red", " deep red",
 			" tan",
 			" turquoise", 
-			" yellow", "bright yellow", " neon yellow", " dark yellow",
+			" yellow", " light yellow", " bright yellow", " neon yellow", " dark yellow",
 			" white", " off-white"
 			];
 			
@@ -1079,8 +1079,6 @@ class ElgaWindow extends MovieClip {
 			
 			m_ColorsException["Pumpkinhead, Bloody"] = ["Pumpkinhead","Bloody"];
 			m_ColorsException["Head-O-Lantern"] = ["Pumpkinhead","Head-O-Lantern"];
-			
-			m_ColorsException["Slim shades, cyan frame"] = ["Slim shades","cyan frame"];
 			
 			m_ColorsException["Loose \"Believe\" T-Shirt, yellow"] = ["Loose T-Shirt","\"Believe\", yellow"];
 			m_ColorsException["Loose Bingo! T-Shirt"] = ["Loose T-Shirt","Bingo!"];
