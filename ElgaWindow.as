@@ -394,17 +394,20 @@ class ElgaWindow extends MovieClip {
 	
 	// Clothing UI List events
 	
-	private function DarkenEveryClothingSlot(){
-		m_ShowHeadgear1._alpha = 30;
-		m_ShowHeadgear2._alpha = 30;
-		m_ShowHats._alpha = 30;
-		m_ShowNeck._alpha = 30;
-		m_ShowChest._alpha = 30;
-		m_ShowBack._alpha = 30;
-		m_ShowHands._alpha = 30;
-		m_ShowLeg._alpha = 30;
-		m_ShowFeet._alpha = 30;
-		m_ShowMultislot._alpha = 30;
+	private function DarkenEmptyClothingSlot(rootNode:Node){
+		var noAlpha:Number = 100;
+		var emptyAlpha:Number = 30;
+		var placementNodes:Array = rootNode.getChildNodes();
+		m_ShowHeadgear1._alpha = (placementNodes[2].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowHeadgear2._alpha = (placementNodes[1].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowHats._alpha = (placementNodes[0].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowNeck._alpha = (placementNodes[3].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowChest._alpha = (placementNodes[4].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowBack._alpha = (placementNodes[5].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowHands._alpha = (placementNodes[6].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowLeg._alpha = (placementNodes[7].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowFeet._alpha = (placementNodes[8].isLeaf()) ? emptyAlpha : noAlpha;
+		m_ShowMultislot._alpha = (placementNodes[9].isLeaf()) ? emptyAlpha : noAlpha;
 	}
 	
 	private function AlignClothingSlotButton(slot:Number){
@@ -787,7 +790,8 @@ class ElgaWindow extends MovieClip {
 		//m_EquippedInventory
 		for ( i in m_LocationLabels ) {
 			var invItem:InventoryItem = m_EquippedInventory.GetItemAt(i);
-            if (invItem && MatchFilter(invItem.m_Name))  {
+			//if (invItem && MatchFilter(invItem.m_Name))  { // filtering on equiped clothing
+            if (invItem) { // not filtering on equiped clothing
 				var clothingItem = AddItemToSortedItems(invItem.m_Name, i, m_EquippedInventory.m_InventoryID, "_Equipped", invItem.m_Placement);
 				placementDict[invItem.m_Placement] = 1;
 				m_EquippedClothing[i] = clothingItem;
@@ -815,7 +819,7 @@ class ElgaWindow extends MovieClip {
 		}
 		
 		for (var orderIdx = 0; orderIdx < m_PlacementOrder.length; orderIdx++) {
-			if (placementDict[m_PlacementOrder[orderIdx]] == 1)
+			//if (placementDict[m_PlacementOrder[orderIdx]] == 1)
 				placementArray.push(m_PlacementOrder[orderIdx]);
 		}
 		
@@ -830,24 +834,24 @@ class ElgaWindow extends MovieClip {
 			m_RootNode.addChild(placementNode);
 		}
 		
-		//m_FirstItemList.dataProvider = [];
-		if (!m_RootNode.isLeaf())
+		
+		DarkenEmptyClothingSlot(m_RootNode);
+		// useless code ?
+		/*if (!m_RootNode.isLeaf())
 		{
 			var rootChilds:Array = m_RootNode.getChildNodes();
 			for (var childIdx:Number = 0; childIdx < rootChilds.length; ++childIdx) {
 				
 				var childNode:Node = rootChilds[childIdx];
 				if (childNode != null && !childNode.isLeaf()) {
-					var listItem:Object = new Object;
-			
+					var listItem:Object = new Object();
 		    		listItem.m_ItemName = childNode.getNodeName();
 					listItem.m_IsEquipped = (childNode.getNodeData() != null && childNode.getNodeData().m_IsEquipped);
 					listItem.m_NodeIdx = childIdx;
 					listItem.m_IsContainer = (!childNode.isLeaf());
-				    //m_FirstItemList.dataProvider.push( listItem );
 				}
 			}
-		}
+		}*/
 		
 		m_SecondItemList.dataProvider = [];
 		m_SecondItemList.selectedIndex = -1;
@@ -962,54 +966,56 @@ class ElgaWindow extends MovieClip {
 	
 	private function organizeClothing(placement:Array, placementName:String): Node {
 		var rootNode:Node = new Node(placementName);
-		for (var placementIdx:Number = 0; placementIdx < placement.length; placementIdx++) {
-			var clothingItem = placement[placementIdx];
-			if (!clothingItem)
-				continue;
-						
-			var clothingName:String = clothingItem.m_Name;
-			
-			var nodeNames = getNodeNames(clothingName);
-			var firstNodeName:String = nodeNames[0];
-			var secondNodeName:String = nodeNames[1];
-			
-			var secondNode:Node = null;
-			var firstNode:Node = null;
-			
-			if (rootNode.hasNodeNamed(firstNodeName)) {
-				//if the first node exist
-				var firstNodeFromRoot = rootNode.getChildNamed(firstNodeName);
+		if (placement != null) {
+			for (var placementIdx:Number = 0; placementIdx < placement.length; placementIdx++) {
+				var clothingItem = placement[placementIdx];
+				if (!clothingItem)
+					continue;
+							
+				var clothingName:String = clothingItem.m_Name;
 				
-				if (firstNodeFromRoot.hasNodeData()) { // if the node is direclty a cloth, moving the node to the lower level
-					var firstNodeData = firstNodeFromRoot.getNodeData();
-					firstNodeFromRoot.setNodeData(null);
+				var nodeNames = getNodeNames(clothingName);
+				var firstNodeName:String = nodeNames[0];
+				var secondNodeName:String = nodeNames[1];
+				
+				var secondNode:Node = null;
+				var firstNode:Node = null;
+				
+				if (rootNode.hasNodeNamed(firstNodeName)) {
+					//if the first node exist
+					var firstNodeFromRoot = rootNode.getChildNamed(firstNodeName);
 					
-					var originalSecondNode:Node = new Node("(" + m_DefaultTranslation + ")");
-					originalSecondNode.setNodeData(firstNodeData);
-					firstNodeFromRoot.addChild(originalSecondNode);
-				}
-				
-				if (secondNodeName == null) {
-					secondNode = new Node("(" + m_DefaultTranslation + ")");
-				} else {
-					secondNode = new Node(secondNodeName);
-				}
-				secondNode.setNodeData(clothingItem);
-				firstNodeFromRoot.addChild(secondNode);
-			}
-			else { // if the first node does not exist, i do what i want (no bother)
-				firstNode = new Node(firstNodeName);
-				rootNode.addChild(firstNode);
-				
-				if (secondNodeName != null) {
-					secondNode = new Node(secondNodeName);
-				}
-				if (secondNode != null) {
+					if (firstNodeFromRoot.hasNodeData()) { // if the node is direclty a cloth, moving the node to the lower level
+						var firstNodeData = firstNodeFromRoot.getNodeData();
+						firstNodeFromRoot.setNodeData(null);
+						
+						var originalSecondNode:Node = new Node("(" + m_DefaultTranslation + ")");
+						originalSecondNode.setNodeData(firstNodeData);
+						firstNodeFromRoot.addChild(originalSecondNode);
+					}
+					
+					if (secondNodeName == null) {
+						secondNode = new Node("(" + m_DefaultTranslation + ")");
+					} else {
+						secondNode = new Node(secondNodeName);
+					}
 					secondNode.setNodeData(clothingItem);
-					firstNode.addChild(secondNode);
+					firstNodeFromRoot.addChild(secondNode);
 				}
-				else {
-					firstNode.setNodeData(clothingItem);
+				else { // if the first node does not exist, i do what i want (no bother)
+					firstNode = new Node(firstNodeName);
+					rootNode.addChild(firstNode);
+					
+					if (secondNodeName != null) {
+						secondNode = new Node(secondNodeName);
+					}
+					if (secondNode != null) {
+						secondNode.setNodeData(clothingItem);
+						firstNode.addChild(secondNode);
+					}
+					else {
+						firstNode.setNodeData(clothingItem);
+					}
 				}
 			}
 		}
