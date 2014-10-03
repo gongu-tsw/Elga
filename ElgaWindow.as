@@ -1054,7 +1054,7 @@ class ElgaWindow extends MovieClip {
 			" original",
 			" pink", " neonpink",
 			" Regenbogen",
-			" rot",
+			" rot", " knallrot",
 			" rosa", " pastellrosa",
 			" schokoladen",
 			" schwarz",
@@ -1172,7 +1172,7 @@ class ElgaWindow extends MovieClip {
 			" purple", " dark purple", " light purple", " deep purple",
 			" silver",
 			" rainbow",
-			" red", " light red", " dark red", " deep red",
+			" red", " light red", " dark red", " deep red", " bright red",
 			" tan",
 			" turquoise", 
 			" yellow", " light yellow", " bright yellow", " neon yellow", " dark yellow",
@@ -1181,7 +1181,7 @@ class ElgaWindow extends MovieClip {
 			
 			m_ColorsException = new Object();
 			m_ColorsException["MMORPG T-shirt"] = ["MMORPG t-shirt", "white"];
-			
+			m_ColorsException["High waist trousers, striped"] = ["High waist trousers", "striped"];
 			m_ColorsException["Striped hoodie jacket, black and red"] = ["Striped hoodie jacket (unzipped)","black and red"];
 			m_ColorsException["Striped hoodie jacket, brown and orange"] = ["Striped hoodie jacket (unzipped)","brown and orange"];
 			m_ColorsException["Striped hoodie jacket, green and yellow"] = ["Striped hoodie jacket (unzipped)","green and yellow"];
