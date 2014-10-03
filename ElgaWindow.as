@@ -56,6 +56,7 @@ class ElgaWindow extends MovieClip {
 	private var m_SortedItems:Object; // used for sorting all clothing by placement
 	
 	private var m_RootNode:Node; // tree node of clothing = result of grouping/sorting clothing
+	private var m_RootNodeFirstIndex:Number;
 	
 	private var m_PreviewedClothing:Object; // character current preview in addon way
 	private var m_EquippedClothing:Object; //character current clothes in addon way, currently useless
@@ -78,7 +79,6 @@ class ElgaWindow extends MovieClip {
 	private var m_ShowVendorText:Object;
 	private var m_ShowVendorCheckBox:CheckBox;
 	
-	private var m_FirstItemList:ScrollingList;
 	private var m_SecondItemList:ScrollingList;
 	private var m_ThirdItemList:ScrollingList;
 	
@@ -108,6 +108,18 @@ class ElgaWindow extends MovieClip {
     private var m_PreviewIconFeet:MovieClip;
     private var m_PreviewIconMultislot:MovieClip;
 	
+	// Select slot icons
+	private var m_ShowHeadgear1:MovieClip;
+    private var m_ShowHeadgear2:MovieClip;
+    private var m_ShowHats:MovieClip;
+    private var m_ShowNeck:MovieClip;
+    private var m_ShowChest:MovieClip;
+    private var m_ShowBack:MovieClip;
+    private var m_ShowHands:MovieClip;
+    private var m_ShowLeg:MovieClip;
+    private var m_ShowFeet:MovieClip;
+    private var m_ShowMultislot:MovieClip;
+	
 	public function ElgaWindow() {
 		super();
 		
@@ -116,7 +128,6 @@ class ElgaWindow extends MovieClip {
 		m_Background.onRelease = Delegate.create(this, handleStopDrag);
 		m_Background.onReleaseOutside = Delegate.create(this, handleStopDrag);
 		m_Background.onPress = Delegate.create(this, handleStartDrag);
-		m_FirstItemList.rowCount = 10;
 		singleton = this;
 		m_PreviewedClothing = new Object();
 		m_EquippedClothing = new Object();
@@ -136,9 +147,6 @@ class ElgaWindow extends MovieClip {
 		
 		m_ResetPreview.addEventListener("click", this, "ResetPreview");
 		m_ResetPreview.addEventListener("focusIn", this, "RemoveFocus");
-		
-		m_FirstItemList.addEventListener("focusIn", this, "RemoveFocus");
-        m_FirstItemList.addEventListener("itemClick", this, "OnFirstItemListItemSelected");
 		
 		m_SecondItemList.addEventListener("focusIn", this, "RemoveFocus");
         m_SecondItemList.addEventListener("itemClick", this, "OnSecondItemListItemSelected");
@@ -213,6 +221,28 @@ class ElgaWindow extends MovieClip {
 		m_PreviewIconLeg.m_ClothingPlacement = _global.Enums.ItemEquipLocation.e_Wear_Legs;
     	m_PreviewIconFeet.m_ClothingPlacement = _global.Enums.ItemEquipLocation.e_Wear_Feet;
 		m_PreviewIconMultislot.m_ClothingPlacement = _global.Enums.ItemEquipLocation.e_Wear_FullOutfit;
+		
+		m_ShowHeadgear1.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowHeadgear2.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowHats.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowNeck.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowChest.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowBack.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowHands.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowLeg.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowFeet.addEventListener("focusIn", this, "RemoveFocus");
+		m_ShowMultislot.addEventListener("focusIn", this, "RemoveFocus");
+		
+		m_ShowHeadgear1.addEventListener("click", this, "OnShowHeadgear1");
+		m_ShowHeadgear2.addEventListener("click", this, "OnShowHeadgear2");
+		m_ShowHats.addEventListener("click", this, "OnShowHats");
+		m_ShowNeck.addEventListener("click", this, "OnShowNeck");
+		m_ShowChest.addEventListener("click", this, "OnShowChest");
+		m_ShowBack.addEventListener("click", this, "OnShowBack");
+		m_ShowHands.addEventListener("click", this, "OnShowHands");
+		m_ShowLeg.addEventListener("click", this, "OnShowLeg");
+		m_ShowFeet.addEventListener("click", this, "OnShowFeet");
+		m_ShowMultislot.addEventListener("click", this, "OnShowMultislot");
 		
 		m_PlacementOrder = new Array();
 		m_PlacementOrder.push(Math.pow(2, _global.Enums.ItemEquipLocation.e_Wear_Hat));
@@ -295,10 +325,11 @@ class ElgaWindow extends MovieClip {
 		
 		var array = m_RootNode.searchNode("m_Name", clothingName);
 
-		if (array[0] != undefined && array[0] != null) {
+		/*if (array[0] != undefined && array[0] != null) {
 			m_FirstItemList.selectedIndex = array[0];
 			OnFirstItemListItemSelected({index: array[0]});
-		}
+		}*/
+		SelectNodeForSecondItemList( array[0]); // TODO Highlight good icon
 		if (array[1] != undefined && array[1] != null) {
 			m_SecondItemList.selectedIndex = array[1];
 			OnSecondItemListItemSelected({index: array[1]});
@@ -307,6 +338,10 @@ class ElgaWindow extends MovieClip {
 			m_ThirdItemList.selectedIndex = array[2];
 			OnThirdItemListItemSelected({index: array[2]});
 		}
+	}
+	
+	private function ShowHideNameCustomizationWindow(event:Object) {
+		
 	}
 	
 	private function PreviewIconClick(event:Object, object:Object) {
@@ -327,10 +362,11 @@ class ElgaWindow extends MovieClip {
 		
 		var array = m_RootNode.searchNode("m_Name", clothingName);
 		
-		if (array[0] != undefined && array[0] != null) {
+		/*if (array[0] != undefined && array[0] != null) {
 			m_FirstItemList.selectedIndex = array[0];
 			OnFirstItemListItemSelected({index: array[0]});
-		}
+		}*/
+		SelectNodeForSecondItemList( array[0])// TODO Hightlight good icon
 		if (array[1] != undefined && array[1] != null) {
 			m_SecondItemList.selectedIndex = array[1];
 			OnSecondItemListItemSelected({index: array[1]});
@@ -357,13 +393,83 @@ class ElgaWindow extends MovieClip {
 	}
 	
 	// Clothing UI List events
-	private function OnFirstItemListItemSelected( event:Object )
-    {
-		// We have to fill the second list according to the first list selection
-		var nodeIdx = m_FirstItemList.dataProvider[event.index].m_NodeIdx;
-		var secondListParentNode:Node = m_RootNode.getChildAt(nodeIdx);
+	
+	private function DarkenEveryClothingSlot(){
+		m_ShowHeadgear1._alpha = 30;
+		m_ShowHeadgear2._alpha = 30;
+		m_ShowHats._alpha = 30;
+		m_ShowNeck._alpha = 30;
+		m_ShowChest._alpha = 30;
+		m_ShowBack._alpha = 30;
+		m_ShowHands._alpha = 30;
+		m_ShowLeg._alpha = 30;
+		m_ShowFeet._alpha = 30;
+		m_ShowMultislot._alpha = 30;
+	}
+	
+	private function AlignClothingSlotButton(slot:Number){
+		var defaultX:Number = 6;
+		var shiftedX:Number = 16;
+		
+		m_ShowHeadgear1._x = (slot == 2 )?shiftedX:defaultX;
+		m_ShowHeadgear2._x = (slot == 1 )?shiftedX:defaultX;
+		m_ShowHats._x = (slot == 0 )?shiftedX:defaultX;
+		m_ShowNeck._x = (slot == 3 )?shiftedX:defaultX;
+		m_ShowChest._x = (slot == 4 )?shiftedX:defaultX;
+		m_ShowBack._x = (slot == 5 )?shiftedX:defaultX;
+		m_ShowHands._x = (slot == 6 )?shiftedX:defaultX;
+		m_ShowLeg._x = (slot == 7 )?shiftedX:defaultX;
+		m_ShowFeet._x = (slot == 8 )?shiftedX:defaultX;
+		m_ShowMultislot._x = (slot == 9 )?shiftedX:defaultX;
+	}
+	
+	private function OnShowHeadgear1(event:Object, object:Object) {
+		SelectNodeForSecondItemList(2);
+	}
+	
+	private function OnShowHeadgear2(event:Object, object:Object) {
+		SelectNodeForSecondItemList(1);
+	}
+	
+	private function OnShowHats(event:Object, object:Object) {
+		SelectNodeForSecondItemList(0);
+	}
+	
+	private function OnShowNeck(event:Object, object:Object) {
+		SelectNodeForSecondItemList(3);
+	}
+	
+	private function OnShowChest(event:Object, object:Object) {
+		SelectNodeForSecondItemList(4);
+	}
+	
+	private function OnShowBack(event:Object, object:Object) {
+		SelectNodeForSecondItemList(5);
+	}
+	
+	private function OnShowHands(event:Object, object:Object) {
+		SelectNodeForSecondItemList(6);
+	}
+	
+	private function OnShowLeg(event:Object, object:Object) {
+		SelectNodeForSecondItemList(7);
+	}
+	
+	private function OnShowFeet(event:Object, object:Object) {
+		SelectNodeForSecondItemList(8);
+	}
+	
+	private function OnShowMultislot(event:Object, object:Object) {
+		SelectNodeForSecondItemList(9);
+	}
+	
+	private function SelectNodeForSecondItemList(index:Number) {
+		m_RootNodeFirstIndex = index;
+		var secondListParentNode:Node = m_RootNode.getChildAt(index);
 		if (secondListParentNode == null)
 			return;
+		
+		AlignClothingSlotButton(index);
 		
 		m_SecondItemList.selectedIndex = -1;
 		m_SecondItemList.dataProvider = [];
@@ -389,13 +495,12 @@ class ElgaWindow extends MovieClip {
 		}
         m_SecondItemList.invalidateData();
 		m_ThirdItemList.invalidateData();
-    }
+	}
 	
 	private function OnSecondItemListItemSelected( event:Object )
     {
 		// We have to fill the second list according to the first list selection
-		var firstListIndex:Number = m_FirstItemList.selectedIndex;
-		var firstNodeIdx = m_FirstItemList.dataProvider[firstListIndex].m_NodeIdx;
+		var firstNodeIdx = m_RootNodeFirstIndex;
 		
 		var secondListParentNode:Node = m_RootNode.getChildAt(firstNodeIdx);
 		if (secondListParentNode == null)
@@ -446,8 +551,7 @@ class ElgaWindow extends MovieClip {
 	
 	private function OnThirdItemListItemSelected( event:Object )
     {
-		var firstListIndex:Number = m_FirstItemList.selectedIndex;
-		var firstNodeIdx = m_FirstItemList.dataProvider[firstListIndex].m_NodeIdx;
+		var firstNodeIdx =m_RootNodeFirstIndex;
 		
 		var secondListParentNode:Node = m_RootNode.getChildAt(firstNodeIdx);
 		if (secondListParentNode == null)
@@ -473,8 +577,7 @@ class ElgaWindow extends MovieClip {
 	
 	// Clothing UI List events : Double click
 	private function OnItemListDoubleClicked() {    
-        var firstListIndex:Number = m_FirstItemList.selectedIndex;
-		var firstNodeIdx = m_FirstItemList.dataProvider[firstListIndex].m_NodeIdx;
+		var firstNodeIdx = m_RootNodeFirstIndex;
 		
 		var secondListParentNode:Node = m_RootNode.getChildAt(firstNodeIdx);
 		if (secondListParentNode == null)
@@ -727,7 +830,7 @@ class ElgaWindow extends MovieClip {
 			m_RootNode.addChild(placementNode);
 		}
 		
-		m_FirstItemList.dataProvider = [];
+		//m_FirstItemList.dataProvider = [];
 		if (!m_RootNode.isLeaf())
 		{
 			var rootChilds:Array = m_RootNode.getChildNodes();
@@ -741,21 +844,18 @@ class ElgaWindow extends MovieClip {
 					listItem.m_IsEquipped = (childNode.getNodeData() != null && childNode.getNodeData().m_IsEquipped);
 					listItem.m_NodeIdx = childIdx;
 					listItem.m_IsContainer = (!childNode.isLeaf());
-				    m_FirstItemList.dataProvider.push( listItem );
+				    //m_FirstItemList.dataProvider.push( listItem );
 				}
 			}
 		}
 		
-		//m_FirstItemList.dataProvider.sortOn( "m_ItemName" ); 
-        m_FirstItemList.invalidateData();
-		
 		m_SecondItemList.dataProvider = [];
-		m_SecondItemList.invalidateData();
 		m_SecondItemList.selectedIndex = -1;
 		
 		m_ThirdItemList.dataProvider = [];
-		m_ThirdItemList.invalidateData();
 		m_ThirdItemList.selectedIndex = -1;
+		
+		SelectNodeForSecondItemList(m_RootNodeFirstIndex);
 	}
 	
 	private function RightToPurchaseItem(inventoryItem:InventoryItem)
@@ -819,8 +919,8 @@ class ElgaWindow extends MovieClip {
 	}
 	
 	private function getNodeNames(clothingName):Array {
-			var firstNodeName:String = clothingName;
-			var secondNodeName:String = null;
+			var firstNodeName:String = clothingName; // groupName, if a split was found, otherwise fullName
+			var secondNodeName:String = null; // = endName, usually with the color or set name
 			if (m_ColorsException[clothingName]) {
 				firstNodeName = m_ColorsException[clothingName][0];
 				secondNodeName = m_ColorsException[clothingName][1];
@@ -828,6 +928,11 @@ class ElgaWindow extends MovieClip {
 			else {
 				var charIndex:Number = -1; 
 				
+				// move the set title at the end of the name
+				// ie: Venetian Tactical Armor – Military beret
+				// becomes:
+				// groupName: Military beret
+				// endName: (Venetian Tactical Armor)
 				var firstCutIdx:Number = clothingName.indexOf(" - ");
 				if (firstCutIdx != -1) {
 					charIndex = clothingName.length - ( firstCutIdx + 3);
@@ -835,6 +940,7 @@ class ElgaWindow extends MovieClip {
 						" (" + clothingName.substring(0, firstCutIdx) + ")";
 				}
 				
+				// move the color part of the name in the end name
 				for (var colorName:String in m_Colors) {
 					var newCharIndex:Number = clothingName.indexOf(colorName);
 					if (newCharIndex != -1 && (charIndex == -1 || newCharIndex < charIndex)) {
@@ -842,6 +948,7 @@ class ElgaWindow extends MovieClip {
 					}
 				}
 				
+				// remove remaining useless chars (triming spaces and removing , at ends)
 				if (charIndex != -1) {
 					firstNodeName = trim(clothingName.substring(0, charIndex));
 					if (firstNodeName.lastIndexOf(",") == firstNodeName.length - 1) {
@@ -984,6 +1091,7 @@ class ElgaWindow extends MovieClip {
 			" brun-rouge",
 			" camouflage",
 			" chocolat",
+			" corail",
 			" cyan/gris", " cyan",
 			" dorées",
 			" grise", "gris", "grises", "gris-bleu", "gris-vert", 
@@ -1292,6 +1400,13 @@ class ElgaWindow extends MovieClip {
 		this.removeMovieClip();
 		DistributedValue.SetDValue("Elga_OptionWindowOpen", false);
 	}
+	
+	// For name customization
+	
+	private function OpenNameCustomizationWindow(){
+		
+	}
+	
 	
 	//Misc
 	private function RemoveFocus()
