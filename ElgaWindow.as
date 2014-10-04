@@ -33,7 +33,6 @@ class ElgaWindow extends MovieClip {
 
 	// public instances
 	static public var singleton = null;
-	
 	public var SignalPositionChanged:Signal;
 	public var SignalClosedWindow:Signal;
 	
@@ -48,15 +47,14 @@ class ElgaWindow extends MovieClip {
 	// used for sorting a clothing correctly when it's not with the general mechanic (funcom fault?)
 	private var m_ColorsException:Object;
 	
-	// used to rewrite clothing from sets
-	private var m_ClothingSetNames:Array; 
-	
 	private var m_WardrobeInventory:Inventory; // character wardrobe
 	private var m_EquippedInventory:Inventory; // character current clothes
 	private var m_SortedItems:Object; // used for sorting all clothing by placement
 	
 	private var m_RootNode:Node; // tree node of clothing = result of grouping/sorting clothing
 	private var m_RootNodeFirstIndex:Number;
+	private var m_LastSelectedGroup:String;
+	private var m_LastSelectedCloth:String;
 	
 	private var m_PreviewedClothing:Object; // character current preview in addon way
 	private var m_EquippedClothing:Object; //character current clothes in addon way, currently useless
@@ -322,22 +320,7 @@ class ElgaWindow extends MovieClip {
 	private function ClothingIconClick(event:Object, object:Object) {
 		var placement = event.target.m_ClothingPlacement;
 		var clothingName = event.target.m_ClothingName;
-		
-		var array = m_RootNode.searchNode("m_Name", clothingName);
-
-		/*if (array[0] != undefined && array[0] != null) {
-			m_FirstItemList.selectedIndex = array[0];
-			OnFirstItemListItemSelected({index: array[0]});
-		}*/
-		SelectNodeForSecondItemList( array[0]); // TODO Highlight good icon
-		if (array[1] != undefined && array[1] != null) {
-			m_SecondItemList.selectedIndex = array[1];
-			OnSecondItemListItemSelected({index: array[1]});
-		}
-		if (array[2] != undefined && array[2] != null) {
-			m_ThirdItemList.selectedIndex = array[2];
-			OnThirdItemListItemSelected({index: array[2]});
-		}
+		SelectClothingByName(clothingName);
 	}
 	
 	private function ShowHideNameCustomizationWindow(event:Object) {
@@ -359,14 +342,13 @@ class ElgaWindow extends MovieClip {
 			}
 			return
 		}
-		
+		SelectClothingByName(clothingName);
+	}
+	
+	private function SelectClothingByName(clothingName:String) {
 		var array = m_RootNode.searchNode("m_Name", clothingName);
 		
-		/*if (array[0] != undefined && array[0] != null) {
-			m_FirstItemList.selectedIndex = array[0];
-			OnFirstItemListItemSelected({index: array[0]});
-		}*/
-		SelectNodeForSecondItemList( array[0])// TODO Hightlight good icon
+		SelectNodeForSecondItemList( array[0]);
 		if (array[1] != undefined && array[1] != null) {
 			m_SecondItemList.selectedIndex = array[1];
 			OnSecondItemListItemSelected({index: array[1]});
@@ -520,6 +502,7 @@ class ElgaWindow extends MovieClip {
 		if (thirdListParentNode.isLeaf()) {
 			if (event.type != undefined) {
 				var clothingItem = thirdListParentNode.getNodeData();
+				m_LastSelectedCloth = clothingItem.m_Name;
 				PreviewClothing(clothingItem);
 			}
 		}
@@ -543,6 +526,7 @@ class ElgaWindow extends MovieClip {
 				if (event.type != undefined) {
 					var thirdListChildNode:Node = thirdListNodeChildrens[0];
 					var clothingItem = thirdListChildNode.getNodeData();
+					m_LastSelectedCloth = clothingItem.m_Name;
 					PreviewClothing(clothingItem);
 				}
 			}
@@ -564,7 +548,6 @@ class ElgaWindow extends MovieClip {
 		var secondNodeIdx = m_SecondItemList.dataProvider[secondListIndex].m_NodeIdx;
 		var thirdListParentNode:Node = secondListParentNode.getChildAt(secondNodeIdx);
 		
-		// TODO fix bug on next three line
 		var thirdNodeIdx =  m_ThirdItemList.dataProvider[event.index].m_NodeIdx;
 		var thirdListChildNode:Node = thirdListParentNode.getChildAt(thirdNodeIdx);
 		var childNodes = thirdListParentNode.getChildNodes();
@@ -572,8 +555,9 @@ class ElgaWindow extends MovieClip {
 			return;
 		}
 		
-		if (event.type != undefined) {
+		if (event.type != undefined) { // event done by user
 			var clothingItem = thirdListChildNode.getNodeData();
+			m_LastSelectedCloth = clothingItem.m_Name;
 			PreviewClothing(clothingItem);
 		}
 	}
@@ -589,6 +573,8 @@ class ElgaWindow extends MovieClip {
 		var secondListIndex = m_SecondItemList.selectedIndex;
 		var secondNodeIdx = m_SecondItemList.dataProvider[secondListIndex].m_NodeIdx;
 		var thirdListParentNode:Node = secondListParentNode.getChildAt(secondNodeIdx);
+		
+		m_LastSelectedGroup =  m_SecondItemList.dataProvider[secondListIndex].m_Name;
 		
 		var finalNode = thirdListParentNode;
 		if (!thirdListParentNode.isLeaf()) {
@@ -612,6 +598,7 @@ class ElgaWindow extends MovieClip {
         }
         else            
         {
+			m_LastSelectedCloth = item.m_Name;// not want to reselect it if removed, stupid code could reapply preview (not checked)
             m_EquippedInventory.AddItem( item.m_InventoryID, item.m_IndexInInventory, _global.Enums.ItemEquipLocation.e_Wear_DefaultLocation );
         }
     }
@@ -834,24 +821,7 @@ class ElgaWindow extends MovieClip {
 			m_RootNode.addChild(placementNode);
 		}
 		
-		
 		DarkenEmptyClothingSlot(m_RootNode);
-		// useless code ?
-		/*if (!m_RootNode.isLeaf())
-		{
-			var rootChilds:Array = m_RootNode.getChildNodes();
-			for (var childIdx:Number = 0; childIdx < rootChilds.length; ++childIdx) {
-				
-				var childNode:Node = rootChilds[childIdx];
-				if (childNode != null && !childNode.isLeaf()) {
-					var listItem:Object = new Object();
-		    		listItem.m_ItemName = childNode.getNodeName();
-					listItem.m_IsEquipped = (childNode.getNodeData() != null && childNode.getNodeData().m_IsEquipped);
-					listItem.m_NodeIdx = childIdx;
-					listItem.m_IsContainer = (!childNode.isLeaf());
-				}
-			}
-		}*/
 		
 		m_SecondItemList.dataProvider = [];
 		m_SecondItemList.selectedIndex = -1;
@@ -860,6 +830,7 @@ class ElgaWindow extends MovieClip {
 		m_ThirdItemList.selectedIndex = -1;
 		
 		SelectNodeForSecondItemList(m_RootNodeFirstIndex);
+		SelectClothingByName(m_LastSelectedCloth);
 	}
 	
 	private function RightToPurchaseItem(inventoryItem:InventoryItem)
@@ -1173,7 +1144,7 @@ class ElgaWindow extends MovieClip {
 			" silver",
 			" rainbow",
 			" red", " light red", " dark red", " deep red", " bright red",
-			" tan",
+			//" tan",  // tan is a poor choise of color because tank top exists...
 			" turquoise", 
 			" yellow", " light yellow", " bright yellow", " neon yellow", " dark yellow",
 			" white", " off-white"
@@ -1181,6 +1152,7 @@ class ElgaWindow extends MovieClip {
 			
 			m_ColorsException = new Object();
 			m_ColorsException["MMORPG T-shirt"] = ["MMORPG t-shirt", "white"];
+			m_ColorsException["Snakeskin Outfit, tan"] = ["Snakeskin Outfit", "tan"];
 			m_ColorsException["High waist trousers, striped"] = ["High waist trousers", "striped"];
 			m_ColorsException["Striped hoodie jacket, black and red"] = ["Striped hoodie jacket (unzipped)","black and red"];
 			m_ColorsException["Striped hoodie jacket, brown and orange"] = ["Striped hoodie jacket (unzipped)","brown and orange"];
