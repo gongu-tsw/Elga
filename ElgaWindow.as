@@ -574,6 +574,7 @@ class ElgaWindow extends MovieClip {
 		var secondNodeIdx = m_SecondItemList.dataProvider[secondListIndex].m_NodeIdx;
 		var thirdListParentNode:Node = secondListParentNode.getChildAt(secondNodeIdx);
 		
+		// TODO check it's corrent
 		m_LastSelectedGroup =  m_SecondItemList.dataProvider[secondListIndex].m_Name;
 		
 		var finalNode = thirdListParentNode;
@@ -891,8 +892,10 @@ class ElgaWindow extends MovieClip {
 		m_PreviewedClothing = new Object();
 		InitializeClothes(true);
 		// TODO make something to reset preview on character
+		// is it even possible ?
 	}
 	
+	// Cut the name of clothings into 2 parts for elga columns
 	private function getNodeNames(clothingName):Array {
 			var firstNodeName:String = clothingName; // groupName, if a split was found, otherwise fullName
 			var secondNodeName:String = null; // = endName, usually with the color or set name
@@ -915,12 +918,21 @@ class ElgaWindow extends MovieClip {
 						" (" + clothingName.substring(0, firstCutIdx) + ")";
 				}
 				
+				/* Needed if we use specific colors
 				// move the color part of the name in the end name
 				for (var colorName:String in m_Colors) {
 					var newCharIndex:Number = clothingName.indexOf(colorName);
 					if (newCharIndex != -1 && (charIndex == -1 || newCharIndex < charIndex)) {
-						charIndex = newCharIndex;
+						var nextChar:String = clothingName.substr(newCharIndex + colorName.length, 1);
+						if (nextChar == "" || nextChar == null || nextChar == " " || nextChar == ",") // to not mistake "ornée" for "or"
+							charIndex = newCharIndex;
 					}
+				}*/
+				
+				// put everything after the virgula at the end (virgula included)
+				var virgulaIdx = clothingName.indexOf(", ");
+				if (virgulaIdx != -1) {
+					charIndex = virgulaIdx;
 				}
 				
 				// remove remaining useless chars (triming spaces and removing , at ends)
@@ -930,6 +942,8 @@ class ElgaWindow extends MovieClip {
 						firstNodeName = firstNodeName.substring(0, firstNodeName.length - 1);
 					}
 					secondNodeName = trim(clothingName.substring(charIndex));
+					if (secondNodeName.indexOf(", ") == 0) // get rid of the starting virgula
+						secondNodeName = secondNodeName.substring(2);
 				}
 			}
 			return [firstNodeName,secondNodeName];
@@ -1064,35 +1078,40 @@ class ElgaWindow extends MovieClip {
 			" argent", " en argent",
 			" beige", " beiges",
 			" blanche", " blanches", " blanche,", " blanc",
-			" bleu", " bleue", " bleus", " bleues",  " bleue,", " bleu-gris", 
-			" brun-rouge",
+			" bleu", " bleue", " bleus", " bleues",  " bleue,", " bleu-gris",
+			" bordeaux",
+			" brun", " brun-rouge",
 			" camouflage",
 			" chocolat",
 			" corail",
 			" cyan/gris", " cyan",
-			" dorées",
+			" dorées", " dorée",
+			" fauve",
+			" fuchsia",
 			" grise", "gris", "grises", "gris-bleu", "gris-vert", 
 			" jaune", "jaunes",
 			" kaki",
+			" lavande",
 			" lilas",
+			" logo",
 			" magenta",
-			" marron", " marrons,", " marron,",
+			" marron", " marrons,", " marron,", " marron/vert", 
 			" menthe",
 			" multicolore",
-			" noir", " noires", " noire", "noire,", " noirs",
-			" noire/bleues", " noires/bleues",
-			" noire/grises", " noires/grises",
-			" noires/marron", " noires/roses", " noires/rouges", " noires/vertes",
-			" noire/violettes", " noires/violettes", 
+			" noir", " noire",
+			" noir/gris", " noir/bleu", " noir/marron", " noir/rose", " noir/rouge", " noir/vert", " noir/violet", 
 			" or", " en or",
 			" orange", " oranges",
 			" rose"," roses",
 			" rouge", " rouges,", " rouge,", " rouges", " rouge-gris",
+			" saumon",
 			" teinte", 
 			" turquoise", 
 			" vert", " verte", " verts"," verte,"," vertes,"," vertes",
 			" violet", " violets", " violette", " violettes"
 			];
+			
+			predefinedColors = [", "];
 			
 			m_ColorsException = new Object();
 			// Mini-veste -> Mini veste (no dash)
@@ -1103,6 +1122,21 @@ class ElgaWindow extends MovieClip {
 			m_ColorsException["T-shirt \"Curse\", noir"] = ["T-shirt \"Curse\"", "noir"];
 			m_ColorsException["Jonc, rouge"] = ["Joncs", "rouge"];
 			//m_ColorsException["Manteau long en cuir"] = ["Manteau long en cuir", "(violet)"];
+			
+			m_ColorsException["Tête de citrouille grimaçante"] = ["Tête de citrouille", "grimançante"];
+			m_ColorsException["Tête de citrouille grimaçante, ensanglantée"] = ["Tête de citrouille", "grimaçante, ensanglantée"];
+			m_ColorsException["Tête de citrouille sanglante"] = ["Tête de citrouille", "sanglante"];
+			m_ColorsException["Tête-de-citrouille"] = ["Tête de citrouille", "Tête-de-citrouille"];
+			m_ColorsException["Tête-de-lanterne"] = ["Tête de citrouille", "Tête-de-lanterne"];
+			m_ColorsException["Tête de citrouille - Jack-O"] = ["Tête de citrouille", "Jack-O"];
+			m_ColorsException["Tête de citrouille - Prince du carré"] = ["Tête de citrouille", "Prince du carré"];
+			
+			m_ColorsException["Veste de policier de Kingsmouth maculée de sang"] = ["Veste de policier de Kingsmouth", "maculée de sang"];
+			m_ColorsException["Sandales compensées, blanch"] = ["Sandales compensées", "blanc"];
+			
+			m_ColorsException["Haut-de-forme à tentacules ardents"] = ["Haut-de-forme à tentacules", "ardents"];
+			m_ColorsException["Haut-de-forme à tentacules givrés"] = ["Haut-de-forme à tentacules", "givrés"];
+			m_ColorsException["Haut-de-forme à tentacules toxiques"] = ["Haut-de-forme à tentacules", "toxiques"];
 			
 			m_ColorsException["Veste à capuche rayée, arc-en-ciel"] = ["Veste à capuche rayée (ouverte)","arc-en-ciel"];
 			m_ColorsException["Veste à capuche rayée, marron et orange"] = ["Veste à capuche rayée (ouverte)","marron et orange"];
