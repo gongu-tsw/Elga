@@ -3,18 +3,14 @@ import com.Components.SearchBox;
 
 import com.GameInterface.Chat;
 import com.GameInterface.DistributedValue;
-import com.GameInterface.Game.Character;
-import com.GameInterface.Game.CharacterBase;
 import com.GameInterface.Inventory;
-import com.GameInterface.InventoryItem;
 import com.GameInterface.Log;
-import com.GameInterface.ShopInterface;
 import com.GameInterface.Tooltip.TooltipUtils;
 import com.GameInterface.Tooltip.TooltipInterface;
 
-
 import com.thesecretworld.chronicle.Gongju.Collection.Node;
 import GongjuListItemRenderer;
+import ElgaCore;
 
 import com.Utils.ID32;
 import com.Utils.LDBFormat;
@@ -39,20 +35,12 @@ class ElgaWindow extends MovieClip {
 	// Internal instances
 	private var m_NeedListUpdate:Boolean = false; // used when the character inventory/wardrobe change to call for reload
 	private var m_LanguageCode:String;
-	private var m_DefaultTranslation:String;
 	
-	// map of known colors separator for the current language.
-	private var m_Colors:Object;
-
-	// used for sorting a clothing correctly when it's not with the general mechanic (funcom fault?)
-	private var m_ColorsException:Object;
-	
-	private var m_WardrobeInventory:Inventory; // character wardrobe
-	private var m_EquippedInventory:Inventory; // character current clothes
 	private var m_SortedItems:Object; // used for sorting all clothing by placement
 	
 	private var m_RootNode:Node; // tree node of clothing = result of grouping/sorting clothing
 	private var m_RootNodeFirstIndex:Number;
+	private var m_LastSelectedPlacement:Number;
 	private var m_LastSelectedGroup:String;
 	private var m_LastSelectedCloth:String;
 	
@@ -61,7 +49,7 @@ class ElgaWindow extends MovieClip {
 	
 	private var m_LocationLabels; // Labels for locations (Legs, Rear) with indexes like an enum (0,1,2, 3...)
 	private var m_LocationLabels2; // Same as m_LocationLabels, but indexes are 2^0 = 1, 2^1 = 2, 2^2 = 4, 2^3 = 8...)
-	private var m_IconIdToPlacementDict; // from a merchant item icon id, gives the placement as m_LocationLabels2 index
+	
 	private var m_PlacementIdToPowerTwo:Object; // map to link location index from enum version to 2^enum version, currently useless
 	private var m_PlacementOrder:Array;
 	private var m_PreviousFilterValue = "";
@@ -76,6 +64,7 @@ class ElgaWindow extends MovieClip {
 	private var m_PreviewText:Object;
 	private var m_ShowVendorText:Object;
 	private var m_ShowVendorCheckBox:CheckBox;
+	private var m_ShowNameCustomizationWindowButton:Button;
 	
 	private var m_SecondItemList:ScrollingList;
 	private var m_ThirdItemList:ScrollingList;
@@ -118,9 +107,15 @@ class ElgaWindow extends MovieClip {
     private var m_ShowFeet:MovieClip;
     private var m_ShowMultislot:MovieClip;
 	
+	private var m_ElgaCore:ElgaCore;
+	
+	private var m_IsCustomNameWindowOpen:Boolean = false;
+	private var m_CustomNameWindow:MovieClip;
+	private var m_This:MovieClip;
+	
 	public function ElgaWindow() {
 		super();
-		
+		m_This = this;
 		SignalClosedWindow = new Signal();
 		SignalPositionChanged = new Signal();;
 		m_Background.onRelease = Delegate.create(this, handleStopDrag);
@@ -129,6 +124,8 @@ class ElgaWindow extends MovieClip {
 		singleton = this;
 		m_PreviewedClothing = new Object();
 		m_EquippedClothing = new Object();
+		
+		m_ElgaCore.subscribeToWardrobeChange(scheduleListUpdate, this);
 	}
 	
 	public function configUI()
@@ -258,35 +255,19 @@ class ElgaWindow extends MovieClip {
 		//m_FilterBox.SetDefaultText(LDBFormat.LDBGetText("GenericGUI", "SearchText"));
 		m_FilterBox.addEventListener("search", this, "FilterTextChanged");
 		
+		m_ShowNameCustomizationWindowButton.addEventListener("click", this, "OnClickNameCustomiwationWindowButton");
+		m_ShowNameCustomizationWindowButton.addEventListener("focusIn", this, "RemoveFocus");
+		//m_ShowNameCustomizationWindowButton.label = LDBFormat.LDBGetText("GenericGUI", "Save");
+		
 		InitializePreview();
 		
-		loadCrap();
+		_global['setTimeout'](this,'InitializeClothes',250,true); 
+		getClothingList();
 	}
 	
 	private function FilterTextChanged() {
-		InitClothingList();
+		getClothingList();
 	}
-	
-	private function loadCrap() {
-		
-		var clientCharacterID:ID32 = Character.GetClientCharID();
-        m_WardrobeInventory = new Inventory( new com.Utils.ID32(_global.Enums.InvType.e_Type_GC_StaticInventory, clientCharacterID.GetInstance()) );
-		m_EquippedInventory = new Inventory( new com.Utils.ID32(_global.Enums.InvType.e_Type_GC_WearInventory, clientCharacterID.GetInstance()) );
-		
-		// not adding listener for shopInterface -> wardrobe is enough to cover for it
-		
-		m_WardrobeInventory.SignalItemAdded.Connect( ScheduleListUpdate, this );
-        m_WardrobeInventory.SignalItemChanged.Connect( ScheduleListUpdate, this );
-        m_WardrobeInventory.SignalItemRemoved.Connect( ScheduleListUpdate, this );
-        
-        m_EquippedInventory.SignalItemAdded.Connect( ScheduleListUpdate, this );
-        m_EquippedInventory.SignalItemChanged.Connect( ScheduleListUpdate, this );
-        m_EquippedInventory.SignalItemRemoved.Connect( ScheduleListUpdate, this );
-		
-		_global['setTimeout'](this,'InitializeClothes',250,true); 
-		InitClothingList();
-	}
-	
 	
 	// Window wide events
 	public function onLoad() {
@@ -294,13 +275,20 @@ class ElgaWindow extends MovieClip {
 		configUI();
 	}
 	
+	public function scheduleListUpdate():Void
+    {
+        m_NeedListUpdate = true;
+    }
+	
 	private function onEnterFrame()
     {
         if ( m_NeedListUpdate )
         {
             m_NeedListUpdate = false;
 			InitializePreview();
-			loadCrap();
+		
+			_global['setTimeout'](this,'InitializeClothes',250,true); 
+			getClothingList();
         }
     }
     
@@ -323,8 +311,19 @@ class ElgaWindow extends MovieClip {
 		SelectClothingByName(clothingName);
 	}
 	
-	private function ShowHideNameCustomizationWindow(event:Object) {
-		
+	private function OnClickNameCustomiwationWindowButton(event:Object) {
+		if (m_IsCustomNameWindowOpen === true) {
+			m_IsCustomNameWindowOpen = false;
+			m_CustomNameWindow.removeMovieClip();
+			m_CustomNameWindow = null; // good ?
+		} else {
+			m_IsCustomNameWindowOpen = true;
+			m_CustomNameWindow = m_This.attachMovie("NameCustomizationWindow", "m_CustomNameWindow", m_This.getNextHighestDepth(), {
+				m_ElgaCore : m_ElgaCore
+			});
+			m_CustomNameWindow._y =  m_This._height + 6;
+			//m_CustomNameWindow.setParentWindow(this);
+		}
 	}
 	
 	private function PreviewIconClick(event:Object, object:Object) {
@@ -348,30 +347,19 @@ class ElgaWindow extends MovieClip {
 	private function SelectClothingByName(clothingName:String) {
 		var array = m_RootNode.searchNode("m_Name", clothingName);
 		
-		SelectNodeForSecondItemList( array[0]);
-		if (array[1] != undefined && array[1] != null) {
-			m_SecondItemList.selectedIndex = array[1];
-			OnSecondItemListItemSelected({index: array[1]});
+		if (array[0] != undefined && array[0] != null) {
+			SelectNodeForSecondItemList(array[0]);
+			
+			if (array[1] != undefined && array[1] != null) {
+				m_SecondItemList.selectedIndex = array[1];
+				OnSecondItemListItemSelected({index: array[1]});
+				
+				if (array[2] != undefined && array[2] != null) {
+					m_ThirdItemList.selectedIndex = array[2];
+					OnThirdItemListItemSelected({index: array[2]});
+				}
+			}
 		}
-		if (array[2] != undefined && array[2] != null) {
-			m_ThirdItemList.selectedIndex = array[2];
-			OnThirdItemListItemSelected({index: array[2]});
-		}
-	}
-	
-	private function OnFilterFieldChange(event:Object) {
-		var filterValue:String = event.target.m_Text;
-		if (filterValue == undefined || filterValue == null)
-			filterValue = "";
-		if (m_PreviousFilterValue == filterValue)
-			return; // not a real change
-		
-		filterValue = trim(filterValue);
-		var splitArray:Array = filterValue.split(" ");
-		if (splitArray.length == 0)
-			return;
-		
-		
 	}
 	
 	// Clothing UI List events
@@ -503,7 +491,14 @@ class ElgaWindow extends MovieClip {
 			if (event.type != undefined) {
 				var clothingItem = thirdListParentNode.getNodeData();
 				m_LastSelectedCloth = clothingItem.m_Name;
-				PreviewClothing(clothingItem);
+				if (m_ElgaCore.previewClothing(clothingItem)) {
+					PreviewClothingSetIcon(clothingItem);
+					m_PreviewedClothing[clothingItem.m_Placement] = clothingItem;
+				}
+				
+				if (m_IsCustomNameWindowOpen) {
+					m_CustomNameWindow.setCurrentCloth(thirdListParentNode, 1);
+				}
 			}
 		}
 		else {
@@ -527,13 +522,19 @@ class ElgaWindow extends MovieClip {
 					var thirdListChildNode:Node = thirdListNodeChildrens[0];
 					var clothingItem = thirdListChildNode.getNodeData();
 					m_LastSelectedCloth = clothingItem.m_Name;
-					PreviewClothing(clothingItem);
+					if (m_ElgaCore.previewClothing(clothingItem)) {
+						PreviewClothingSetIcon(clothingItem);
+						m_PreviewedClothing[clothingItem.m_Placement] = clothingItem;
+					}
+					
+					if (m_IsCustomNameWindowOpen) {
+						m_CustomNameWindow.setCurrentCategory(thirdListParentNode);
+					}
 				}
 			}
 		}
 
         m_ThirdItemList.invalidateData();
-		
 	}
 	
 	private function OnThirdItemListItemSelected( event:Object )
@@ -558,7 +559,13 @@ class ElgaWindow extends MovieClip {
 		if (event.type != undefined) { // event done by user
 			var clothingItem = thirdListChildNode.getNodeData();
 			m_LastSelectedCloth = clothingItem.m_Name;
-			PreviewClothing(clothingItem);
+			if (m_ElgaCore.previewClothing(clothingItem)) {
+				PreviewClothingSetIcon(clothingItem);
+				m_PreviewedClothing[clothingItem.m_Placement] = clothingItem;
+			}
+			if (m_IsCustomNameWindowOpen) {
+				m_CustomNameWindow.setCurrentCloth(thirdListChildNode, 2);
+			}
 		}
 	}
 	
@@ -574,7 +581,7 @@ class ElgaWindow extends MovieClip {
 		var secondNodeIdx = m_SecondItemList.dataProvider[secondListIndex].m_NodeIdx;
 		var thirdListParentNode:Node = secondListParentNode.getChildAt(secondNodeIdx);
 		
-		// TODO check it's corrent
+		// TODO check it's correct
 		m_LastSelectedGroup =  m_SecondItemList.dataProvider[secondListIndex].m_Name;
 		
 		var finalNode = thirdListParentNode;
@@ -590,52 +597,12 @@ class ElgaWindow extends MovieClip {
 		}
 
 		var item = finalNode.getNodeData();
-        if ( item.m_IsEquipped )
-        {
-            if ( CanLocationBeUnequipped( item.m_IndexInInventory ) )
-            {
-                m_WardrobeInventory.AddItem( item.m_InventoryID, item.m_IndexInInventory, _global.Enums.ItemEquipLocation.e_Wear_DefaultLocation );
-            }
-        }
-        else            
-        {
+		
+		if ( !item.m_IsEquipped ) {
 			m_LastSelectedCloth = item.m_Name;// not want to reselect it if removed, stupid code could reapply preview (not checked)
-            m_EquippedInventory.AddItem( item.m_InventoryID, item.m_IndexInInventory, _global.Enums.ItemEquipLocation.e_Wear_DefaultLocation );
-        }
+		}
+		m_ElgaCore.equipOrUnequipClothing(item);
     }
-	
-	
-	// Preview icons functions
-	private function PreviewClothing(clothingItem:Object) {
-		if (clothingItem != null && clothingItem.m_IndexInInventory != null){
-			
-			var inventoryToPreview = null;
-			if (clothingItem.m_InventoryName == "_Wardrobe") {
-				inventoryToPreview = m_WardrobeInventory;
-			}
-			else if (clothingItem.m_InventoryName == "_Equipped") {
-				inventoryToPreview = m_EquippedInventory;
-			}
-			else {
-				var inventoryName:String = clothingItem.m_InventoryName;
-				for (var shopInterfaceName in _global.gongjuShopDict) {
-					if (shopInterfaceName == clothingItem.m_InventoryName) {
-						inventoryToPreview = _global.gongjuShopDict[shopInterfaceName];
-						break
-					}
-				}
-			}
-			
-			if (inventoryToPreview != null) {
-				inventoryToPreview.PreviewItem(clothingItem.m_IndexInInventory);
-				PreviewClothingSetIcon(clothingItem);
-				m_PreviewedClothing[clothingItem.m_Placement] = clothingItem;
-			}
-		}
-		else {
-			Chat.SignalShowFIFOMessage.Emit("Erreur sur preview", 0);
-		}
-	}
 	
 	private function PreviewClothingSetIcon(clothingItem:Object) {
 		var tooltipWidth:Number = 200;
@@ -688,7 +655,7 @@ class ElgaWindow extends MovieClip {
 	
 	// Other UI events
 	private function OnShowVendorCheckBoxSelect(event:Object) {
-		InitClothingList();
+		getClothingList();
 	}
 			
 	private function InitializePreview() {
@@ -711,116 +678,10 @@ class ElgaWindow extends MovieClip {
 		m_PreviewIconMultislot.onRollOver = m_PreviewIconMultislot.onPress =  function(){return;}
     }
 	
-	function AddItemToSortedItems(itemName, itemIndexInInventory, inventoryID, inventoryName, itemPlacement, item): Object {
-		var invItemContainer = new Object();
-		invItemContainer.m_Name = itemName;
-		invItemContainer.m_IndexInInventory = itemIndexInInventory;
-		invItemContainer.m_InventoryID = inventoryID;
-		invItemContainer.m_Item = inventoryID;
-		invItemContainer.m_InventoryName = inventoryName;
-		invItemContainer.m_Placement = itemPlacement;
-		invItemContainer.m_Price = SetItemTextPrice(item);
-		if (inventoryName == "_Equipped")
-			invItemContainer.m_IsEquipped = true;
-		if (inventoryName != "_Equipped" && inventoryName != "_Wardrobe")
-			invItemContainer.m_IsBuyable = true;
-		
-		if (itemPlacement  != null) {
-			if (m_SortedItems[itemPlacement] == null) {
-				m_SortedItems[itemPlacement] = new Array();
-			}
-			var placement:Array = m_SortedItems[itemPlacement];
-			placement.push(invItemContainer);
-		}
-		return invItemContainer;
-	}
-	
-	private function GetPlacementForItem(invItem:InventoryItem):Object {
-		return m_IconIdToPlacementDict[invItem.m_Icon];
-	}
-	
-	private function MatchFilter(name:String):Boolean {
-		var searchText:String = m_FilterBox.GetSearchText().toLowerCase();
-		if (searchText.length == 0)
-			return true;
-		
-		name = name.toLowerCase();
-		
-		var searchSplit:Array = searchText.split(" ");
-		for (var idx:Number = 0; idx < searchSplit.length; ++idx) {
-			var searchFilter = searchSplit[idx];
-			if (searchFilter == null || searchFilter.length == 0)
-				continue;
-			if (name.indexOf(searchFilter) == -1) {
-				return false;
-			}
-		}
-		
-		return true;
-	}
-	
-	public function InitClothingList() {
-		m_SortedItems = new Object();
-		var placementDict:Object = new Object();
-		var placementArray:Array = new Array();
-		
+	public function getClothingList() {
 		var searchText:String = m_FilterBox.GetSearchText().toLowerCase();
 		
-		// put all the wardrobe items in their respective placement
-		for ( var i:Number = 0 ; i < m_WardrobeInventory.GetMaxItems() ; ++i ) {
-			var invItem:InventoryItem = m_WardrobeInventory.GetItemAt(i);
-			if ( invItem && MatchFilter(invItem.m_Name)) {
-				AddItemToSortedItems(invItem.m_Name, i, m_WardrobeInventory.m_InventoryID, "_Wardrobe", invItem.m_Placement);
-				placementDict[invItem.m_Placement] = 1;
-			}
-		}
-		
-		//m_EquippedInventory
-		for ( i in m_LocationLabels ) {
-			var invItem:InventoryItem = m_EquippedInventory.GetItemAt(i);
-			//if (invItem && MatchFilter(invItem.m_Name))  { // filtering on equiped clothing
-            if (invItem) { // not filtering on equiped clothing
-				var clothingItem = AddItemToSortedItems(invItem.m_Name, i, m_EquippedInventory.m_InventoryID, "_Equipped", invItem.m_Placement);
-				placementDict[invItem.m_Placement] = 1;
-				m_EquippedClothing[i] = clothingItem;
-            }
-        }
-		
-		if (m_ShowVendorCheckBox.selected)
-		{
-			for (var shopInterfaceKey:String in _global.gongjuShopDict) {
-				var shopInterface:ShopInterface = _global.gongjuShopDict[shopInterfaceKey];
-				if (shopInterface != null) {
-					for (var shopInterfaceItemIdx:Number = 0; shopInterfaceItemIdx < shopInterface.m_Items.length; shopInterfaceItemIdx++) {
-						var shopInterfaceItem = shopInterface.m_Items[shopInterfaceItemIdx];
-						if (shopInterfaceItem != null && shopInterface.CanPreview(shopInterfaceItem)
-							&& RightToPurchaseItem(shopInterfaceItem) && MatchFilter(shopInterfaceItem.m_Name)) {
-							AddItemToSortedItems(shopInterfaceItem.m_Name, shopInterfaceItemIdx, shopInterfaceKey, shopInterfaceKey, GetPlacementForItem(shopInterfaceItem), shopInterfaceItem);
-							placementDict[shopInterfaceItem.m_Placement] = 1;
-						}
-					}
-				}
-				else {
-					Chat.SignalShowFIFOMessage.Emit("Error: Shop interface is null" , 0);
-				}
-			}
-		}
-		
-		for (var orderIdx = 0; orderIdx < m_PlacementOrder.length; orderIdx++) {
-			//if (placementDict[m_PlacementOrder[orderIdx]] == 1)
-				placementArray.push(m_PlacementOrder[orderIdx]);
-		}
-		
-		// analyse each item in a placement to try to build group of items
-		m_RootNode = new Node("root");
-		for (var placementArrayIdx = 0; placementArrayIdx < placementArray.length; placementArrayIdx++) {
-		//for (var placementIt in placementDict) {
-			var placementIt = placementArray[placementArrayIdx];
-			var placement = m_SortedItems[placementIt];
-			var placementNode:Node = organizeClothing(placement, m_LocationLabels2[placementIt]);
-			placementNode.sortOnName(); // sort here to avoid sorting the children of root (== placement)
-			m_RootNode.addChild(placementNode);
-		}
+		m_RootNode = m_ElgaCore.getClothingList(searchText, m_ShowVendorCheckBox.selected);
 		
 		DarkenEmptyClothingSlot(m_RootNode);
 		
@@ -832,11 +693,7 @@ class ElgaWindow extends MovieClip {
 		
 		SelectNodeForSecondItemList(m_RootNodeFirstIndex);
 		SelectClothingByName(m_LastSelectedCloth);
-	}
-	
-	private function RightToPurchaseItem(inventoryItem:InventoryItem)
-	{
-   		return  (inventoryItem.m_CanBuy == undefined || inventoryItem.m_CanBuy);
+		
 	}
 	
 	private function trim(str:String):String
@@ -851,39 +708,8 @@ class ElgaWindow extends MovieClip {
 		for (var placement:String in m_PreviewedClothing) {
 			var clothingItem = m_PreviewedClothing[placement];
 			if ("_Wardrobe" == clothingItem.m_InventoryName) {
-				_global['setTimeout'](this,'EquipClothingInWardrobeFromName',waitValue,clothingItem.m_Name, clothingItem.m_Placement); 
+				_global['setTimeout'](m_ElgaCore,'equipClothingInWardrobeFromName',waitValue,clothingItem.m_Name, clothingItem.m_Placement); 
 				waitValue = waitValue + 250;
-			}
-		}
-	}
-	
-	public function EquipClothingInWardrobeFromName(itemName, placementID){
-		
-		if (itemName == undefined || itemName == "null" || itemName == null) {
-			UnequipClothing(placementID);
-			return undefined;
-		}
-		for (var idx:Number = 0; idx < m_WardrobeInventory.GetMaxItems(); ++idx) {
-			var itemFromWardrobe:InventoryItem = m_WardrobeInventory.GetItemAt(idx);
-			if (itemFromWardrobe && itemFromWardrobe.m_Name == itemName) {
-				m_EquippedInventory.AddItem( m_WardrobeInventory.m_InventoryID, idx,
-					_global.Enums.ItemEquipLocation.e_Wear_DefaultLocation );
-				break;
-			}
-		}
-		//start();
-	}
-	
-	private function UnequipClothing(slotID) {
-		for (var count:Number = 0; count < m_EquippedInventory.GetMaxItems(); ++count) {
-			var itemEquipped = m_EquippedInventory[count];
-			if (itemEquipped.m_Placement == slotID) {
-				if (CanLocationBeUnequipped( itemEquipped.m_InventoryPos)) {
-					m_WardrobeInventory.AddItem(m_EquippedInventory.m_InventoryID(),
-						itemEquipped.m_InventoryPos,
-						_global.Enums.ItemEquipLocation.e_Wear_DefaultLocation);
-					return undefined;
-				}
 			}
 		}
 	}
@@ -895,124 +721,12 @@ class ElgaWindow extends MovieClip {
 		// is it even possible ?
 	}
 	
-	// Cut the name of clothings into 2 parts for elga columns
-	private function getNodeNames(clothingName):Array {
-			var firstNodeName:String = clothingName; // groupName, if a split was found, otherwise fullName
-			var secondNodeName:String = null; // = endName, usually with the color or set name
-			if (m_ColorsException[clothingName]) {
-				firstNodeName = m_ColorsException[clothingName][0];
-				secondNodeName = m_ColorsException[clothingName][1];
-			}
-			else {
-				var charIndex:Number = -1; 
-				
-				// move the set title at the end of the name
-				// ie: Venetian Tactical Armor – Military beret
-				// becomes:
-				// groupName: Military beret
-				// endName: (Venetian Tactical Armor)
-				var firstCutIdx:Number = clothingName.indexOf(" - ");
-				if (firstCutIdx != -1) {
-					charIndex = clothingName.length - ( firstCutIdx + 3);
-					clothingName =  clothingName.substring(firstCutIdx + 3) +
-						" (" + clothingName.substring(0, firstCutIdx) + ")";
-				}
-				
-				/* Needed if we use specific colors
-				// move the color part of the name in the end name
-				for (var colorName:String in m_Colors) {
-					var newCharIndex:Number = clothingName.indexOf(colorName);
-					if (newCharIndex != -1 && (charIndex == -1 || newCharIndex < charIndex)) {
-						var nextChar:String = clothingName.substr(newCharIndex + colorName.length, 1);
-						if (nextChar == "" || nextChar == null || nextChar == " " || nextChar == ",") // to not mistake "ornée" for "or"
-							charIndex = newCharIndex;
-					}
-				}*/
-				
-				// put everything after the virgula at the end (virgula included)
-				var virgulaIdx = clothingName.indexOf(", ");
-				if (virgulaIdx != -1) {
-					charIndex = virgulaIdx;
-				}
-				
-				// remove remaining useless chars (triming spaces and removing , at ends)
-				if (charIndex != -1) {
-					firstNodeName = trim(clothingName.substring(0, charIndex));
-					if (firstNodeName.lastIndexOf(",") == firstNodeName.length - 1) {
-						firstNodeName = firstNodeName.substring(0, firstNodeName.length - 1);
-					}
-					secondNodeName = trim(clothingName.substring(charIndex));
-					if (secondNodeName.indexOf(", ") == 0) // get rid of the starting virgula
-						secondNodeName = secondNodeName.substring(2);
-				}
-			}
-			return [firstNodeName,secondNodeName];
-	}
-	
-	private function organizeClothing(placement:Array, placementName:String): Node {
-		var rootNode:Node = new Node(placementName);
-		if (placement != null) {
-			for (var placementIdx:Number = 0; placementIdx < placement.length; placementIdx++) {
-				var clothingItem = placement[placementIdx];
-				if (!clothingItem)
-					continue;
-							
-				var clothingName:String = clothingItem.m_Name;
-				
-				var nodeNames = getNodeNames(clothingName);
-				var firstNodeName:String = nodeNames[0];
-				var secondNodeName:String = nodeNames[1];
-				
-				var secondNode:Node = null;
-				var firstNode:Node = null;
-				
-				if (rootNode.hasNodeNamed(firstNodeName)) {
-					//if the first node exist
-					var firstNodeFromRoot = rootNode.getChildNamed(firstNodeName);
-					
-					if (firstNodeFromRoot.hasNodeData()) { // if the node is direclty a cloth, moving the node to the lower level
-						var firstNodeData = firstNodeFromRoot.getNodeData();
-						firstNodeFromRoot.setNodeData(null);
-						
-						var originalSecondNode:Node = new Node("(" + m_DefaultTranslation + ")");
-						originalSecondNode.setNodeData(firstNodeData);
-						firstNodeFromRoot.addChild(originalSecondNode);
-					}
-					
-					if (secondNodeName == null) {
-						secondNode = new Node("(" + m_DefaultTranslation + ")");
-					} else {
-						secondNode = new Node(secondNodeName);
-					}
-					secondNode.setNodeData(clothingItem);
-					firstNodeFromRoot.addChild(secondNode);
-				}
-				else { // if the first node does not exist, i do what i want (no bother)
-					firstNode = new Node(firstNodeName);
-					rootNode.addChild(firstNode);
-					
-					if (secondNodeName != null) {
-						secondNode = new Node(secondNodeName);
-					}
-					if (secondNode != null) {
-						secondNode.setNodeData(clothingItem);
-						firstNode.addChild(secondNode);
-					}
-					else {
-						firstNode.setNodeData(clothingItem);
-					}
-				}
-			}
-		}
-		return rootNode;
-	}
-	
 	// used to set translations, color separator (language dependent) and some maps
 	// not character dependent
 	// may broke at each client/server update: using the icon id to set placement for clothing from merchants
 	// will need update for new translations and colors too
 	private function InitStaticData() {
-		m_LanguageCode =  LDBFormat.GetCurrentLanguageCode();
+		m_LanguageCode = LDBFormat.GetCurrentLanguageCode();
 		var predefinedColors:Array = null;
 		
 		if (m_LanguageCode == "de") {
@@ -1021,128 +735,14 @@ class ElgaWindow extends MovieClip {
 			m_WearAllPreview.label = "Alle tragen";
 			m_ResetPreview.label = "Reset Vorschau";
 			m_ShowVendorText.text = "Inventar von Verkäufers zeigen";
-			m_DefaultTranslation = "Standard";
-			
-			predefinedColors = [
-			" beige",
-			" blau", " tiefblau", "neonblau", " knallblau",
-			" braun", " knallbraun",
-			" Camouflage",
-			" gelb", " neongelb", " knallgelb",
-			" gold",
-			" grau",
-			" grün", " minzgrün", "neongrün", "militärgrün", " knallgrün",
-			" lila",
-			" magenta", 
-			" mehrfarbig",
-			" orange", "knallorange", 
-			" original",
-			" pink", " neonpink",
-			" Regenbogen",
-			" rot", " knallrot",
-			" rosa", " pastellrosa",
-			" schokoladen",
-			" schwarz",
-			" silber", " Silber",
-			" türkis",
-			" violett",
-			" weiß",
-			" dunkel", " hell"
-			];
-			
-			// Langer Ledermantel = Langer Ledermantel, violett
-			
-			m_ColorsException = new Object();
-			m_ColorsException["Teen Queen - Abgeschnittene Jeanshose mit Blumengürtel"] = ["Abgeschnittene Jeanshose","mit Blumengürtel (Teen Queen)", null];
-			
-			//m_ColorsException["Langer Ledermantel"] = ["Langer Ledermantel", "(violett)"];
-			m_ColorsException["MMORPG-T-Shirt"] = ["MMORPG-T-Shirt", "weiß"];
-			m_ColorsException["ARG-Hoodie, Die schwarzen Wachmänner"] = ["ARG-Hoodie, Die schwarzen Wachmänner", null];
-			
-			m_ColorsException["Gestreifte Kapuzenjacke, Regenbogen"] = ["Gestreifte Kapuzenjacke (geöffnet)","Regenbogen"];
-			m_ColorsException["Gestreifte Kapuzenjacke, braun und orange"] = ["Gestreifte Kapuzenjacke (geöffnet)","braun und orange"];
-			m_ColorsException["Gestreifte Kapuzenjacke, grün und gelb"] = ["Gestreifte Kapuzenjacke (geöffnet)","grün und gelb"]
-			m_ColorsException["Gestreifte Kapuzenjacke, pink und blau"] = ["Gestreifte Kapuzenjacke (geöffnet)","pink und blau"]
-			m_ColorsException["Gestreifte Kapuzenjacke, schwarz und rot"] = ["Gestreifte Kapuzenjacke (geöffnet)","schwarz und rot"]
 		}
+		
 		if (m_LanguageCode == "fr") {
 			m_WearText.text = "Porté";
 			m_PreviewText.text = "Aperçu";
 			m_WearAllPreview.label = "Tout porter";
 			m_ResetPreview.label = "RAZ de l'aperçu";
 			m_ShowVendorText.text = "Montrer l'inventaire des vendeurs";
-			m_DefaultTranslation = "défaut";
-			
-			predefinedColors = [
-			" arc-en-ciel",
-			" argent", " en argent",
-			" beige", " beiges",
-			" blanche", " blanches", " blanche,", " blanc",
-			" bleu", " bleue", " bleus", " bleues",  " bleue,", " bleu-gris",
-			" bordeaux",
-			" brun", " brun-rouge",
-			" camouflage",
-			" chocolat",
-			" corail",
-			" cyan/gris", " cyan",
-			" dorées", " dorée",
-			" fauve",
-			" fuchsia",
-			" grise", "gris", "grises", "gris-bleu", "gris-vert", 
-			" jaune", "jaunes",
-			" kaki",
-			" lavande",
-			" lilas",
-			" logo",
-			" magenta",
-			" marron", " marrons,", " marron,", " marron/vert", 
-			" menthe",
-			" multicolore",
-			" noir", " noire",
-			" noir/gris", " noir/bleu", " noir/marron", " noir/rose", " noir/rouge", " noir/vert", " noir/violet", 
-			" or", " en or",
-			" orange", " oranges",
-			" rose"," roses",
-			" rouge", " rouges,", " rouge,", " rouges", " rouge-gris",
-			" saumon",
-			" teinte", 
-			" turquoise", 
-			" vert", " verte", " verts"," verte,"," vertes,"," vertes",
-			" violet", " violets", " violette", " violettes"
-			];
-			
-			predefinedColors = [", "];
-			
-			m_ColorsException = new Object();
-			// Mini-veste -> Mini veste (no dash)
-			m_ColorsException["Bande main droite en tissu, marron"] = ["Bande main droite, tissu", "marron"]; 
-			m_ColorsException["Femme fatale - Mini-veste en cuir, marron"] = ["Mini veste en cuir", "marron (Femme fatale)"]; 
-			m_ColorsException["Pantalon cargo camouflage"] = ["Pantalon cargo", "camouflage"];
-			m_ColorsException["Mini-short en denim bleu"] = ["Mini-short", "en denim bleu"];
-			m_ColorsException["T-shirt \"Curse\", noir"] = ["T-shirt \"Curse\"", "noir"];
-			m_ColorsException["Jonc, rouge"] = ["Joncs", "rouge"];
-			//m_ColorsException["Manteau long en cuir"] = ["Manteau long en cuir", "(violet)"];
-			
-			m_ColorsException["Tête de citrouille grimaçante"] = ["Tête de citrouille", "grimançante"];
-			m_ColorsException["Tête de citrouille grimaçante, ensanglantée"] = ["Tête de citrouille", "grimaçante, ensanglantée"];
-			m_ColorsException["Tête de citrouille sanglante"] = ["Tête de citrouille", "sanglante"];
-			m_ColorsException["Tête-de-citrouille"] = ["Tête de citrouille", "Tête-de-citrouille"];
-			m_ColorsException["Tête-de-lanterne"] = ["Tête de citrouille", "Tête-de-lanterne"];
-			m_ColorsException["Tête de citrouille - Jack-O"] = ["Tête de citrouille", "Jack-O"];
-			m_ColorsException["Tête de citrouille - Prince du carré"] = ["Tête de citrouille", "Prince du carré"];
-			
-			m_ColorsException["Veste de policier de Kingsmouth maculée de sang"] = ["Veste de policier de Kingsmouth", "maculée de sang"];
-			m_ColorsException["Sandales compensées, blanch"] = ["Sandales compensées", "blanc"];
-			
-			m_ColorsException["Haut-de-forme à tentacules ardents"] = ["Haut-de-forme à tentacules", "ardents"];
-			m_ColorsException["Haut-de-forme à tentacules givrés"] = ["Haut-de-forme à tentacules", "givrés"];
-			m_ColorsException["Haut-de-forme à tentacules toxiques"] = ["Haut-de-forme à tentacules", "toxiques"];
-			
-			m_ColorsException["Veste à capuche rayée, arc-en-ciel"] = ["Veste à capuche rayée (ouverte)","arc-en-ciel"];
-			m_ColorsException["Veste à capuche rayée, marron et orange"] = ["Veste à capuche rayée (ouverte)","marron et orange"];
-			m_ColorsException["Veste à capuche rayée, noir et rouge"] = ["Veste à capuche rayée (ouverte)","noir et rouge"];
-			m_ColorsException["Veste à capuche rayée, rose et bleu"] = ["Veste à capuche rayée (ouverte)","rose et bleu"];
-			m_ColorsException["Veste à capuche rayée, vert et jaune"] = ["Veste à capuche rayée (ouverte)","vert et jaune"];
 		}
 
 		if (m_LanguageCode == "en") {
@@ -1151,84 +751,7 @@ class ElgaWindow extends MovieClip {
 			m_WearAllPreview.label = "Wear all";
 			m_ResetPreview.label = "Preview reset";
 			m_ShowVendorText.text = "Show vendor's inventory";
-			m_DefaultTranslation = "default";
-			
-			predefinedColors = [
-			" beige", 
-			" black",
-			" blue", " dark blue", " light blue", " deep blue", " bright blue", " neon blue",
-			" brown", " light brown", " dark brown", " deep brown",
-			" camouflage", 
-			" chocolate",
-			" coral",
-			" cyan/grey", " cyan",
-			" gold", 
-			" green", "dark green", " light green", " bright green", " neon green", " deep green",
-			" military green", " light military green", " dark military green",
-			" grey", " dark grey", " light grey", " deep grey",
-			" khaki",
-			" lilac", 
-			" magenta",
-			" mint", 
-			" multicoloured", 
-			" orange", " dark orange", " bright orange",
-			" original",
-			" pink", " light pink", " pastel pink", " neon pink", " dark pink",
-			" purple", " dark purple", " light purple", " deep purple",
-			" silver",
-			" rainbow",
-			" red", " light red", " dark red", " deep red", " bright red",
-			//" tan",  // tan is a poor choise of color because tank top exists...
-			" turquoise", 
-			" yellow", " light yellow", " bright yellow", " neon yellow", " dark yellow",
-			" white", " off-white"
-			];
-			
-			m_ColorsException = new Object();
-			m_ColorsException["MMORPG T-shirt"] = ["MMORPG t-shirt", "white"];
-			m_ColorsException["Snakeskin Outfit, tan"] = ["Snakeskin Outfit", "tan"];
-			m_ColorsException["High waist trousers, striped"] = ["High waist trousers", "striped"];
-			m_ColorsException["Striped hoodie jacket, black and red"] = ["Striped hoodie jacket (unzipped)","black and red"];
-			m_ColorsException["Striped hoodie jacket, brown and orange"] = ["Striped hoodie jacket (unzipped)","brown and orange"];
-			m_ColorsException["Striped hoodie jacket, green and yellow"] = ["Striped hoodie jacket (unzipped)","green and yellow"];
-			m_ColorsException["Striped hoodie jacket, pink and blue"] = ["Striped hoodie jacket (unzipped)","pink and blue"];
-			m_ColorsException["Striped hoodie jacket, rainbow"] = ["Striped hoodie jacket (unzipped)","rainbow"];
-			
-			m_ColorsException["Dark Symmetry - Demon's head shorts with stockings, black"] = ["Demon's head shorts","stockings, black (Dark Symmetry)"];
-			m_ColorsException["Rogue Mechanics - Handygirl shorts with stockings, black"] = ["Handygirl shorts","with stockings, black (Rogue Mechanics)"];
-			
-			m_ColorsException["Pumpkinhead, Bloody"] = ["Pumpkinhead","Bloody"];
-			m_ColorsException["Head-O-Lantern"] = ["Pumpkinhead","Head-O-Lantern"];
-			
-			m_ColorsException["Loose \"Believe\" T-Shirt, yellow"] = ["Loose T-Shirt","\"Believe\", yellow"];
-			m_ColorsException["Loose Bingo! T-Shirt"] = ["Loose T-Shirt","Bingo!"];
-			m_ColorsException["Loose Mr Freezie T-Shirt"] = ["Loose T-Shirt","Mr Freezie"];
 		}
-		
-		var uniqueColor = new Object();
-		
-		for (var colorIdx:Number = 0; colorIdx < predefinedColors.length; ++colorIdx) {
-			var aColor:String = predefinedColors[colorIdx];
-			if (uniqueColor[aColor]) {
-				Chat.SignalShowFIFOMessage.Emit("Couleur en trop: " + aColor, 0);
-			}
-			else
-			{
-				uniqueColor[aColor] = true;
-			}
-			
-		}
-		m_Colors = uniqueColor;
-		
-		m_IconIdToPlacementDict = new Object();
-		m_IconIdToPlacementDict["1000624:7457527"] = 1; // supposition TODO: check
-		m_IconIdToPlacementDict["1000624:7457528"] = 2048;
-		m_IconIdToPlacementDict["1000624:7457529"] = 2; // supposition TODO: check
-		m_IconIdToPlacementDict["1000624:7457530"] = 1024;
-		m_IconIdToPlacementDict["1000624:7457531"] = 16;
-		m_IconIdToPlacementDict["1000624:7457532"] = 32;
-		m_IconIdToPlacementDict["1000624:7457533"] = 128;
-		m_IconIdToPlacementDict["1000624:7457534"] = 4;
 		
 		/*
 		1		??????????????? multi-emplacement
@@ -1280,7 +803,7 @@ class ElgaWindow extends MovieClip {
 	
 	private function InitializeClothes(setPreview:Boolean)
     {
-		var m_InspectionInventory:Inventory = m_EquippedInventory;
+		var m_InspectionInventory:Inventory = m_ElgaCore.getEquipedInventory();
 		
 		m_ClothingIconHeadgear1.onRollOver = m_ClothingIconHeadgear1.onPress =  function(){return;}
 		m_ClothingIconHeadgear2.onRollOver = m_ClothingIconHeadgear2.onPress =  function(){return;}
@@ -1409,6 +932,7 @@ class ElgaWindow extends MovieClip {
     }
 
 	public function CloseWindow(eventObj:Object) {
+		m_ElgaCore.unsubscribeToWardrobeChange(scheduleListUpdate, this);
 		this.removeMovieClip();
 		DistributedValue.SetDValue("Elga_OptionWindowOpen", false);
 	}
@@ -1425,26 +949,6 @@ class ElgaWindow extends MovieClip {
     {
         Selection.setFocus(null);
     }
-    
-    private function ScheduleListUpdate()
-    {
-        m_NeedListUpdate = true;
-    }
-    
-    private function CanLocationBeUnequipped( location:Number ) : Boolean
-    {
-        return location != _global.Enums.ItemEquipLocation.e_Wear_Chest && location != _global.Enums.ItemEquipLocation.e_Wear_Legs;
-    }
-    
-    function SetItemTextPrice(item:InventoryItem):String {
-		if (item.m_TokenCurrencyPrice1 > 0 && item.m_TokenCurrencyType1 == _global.Enums.Token.e_Cash) {
-			return item.m_TokenCurrencyPrice1 + " PAX";
-		}
-		if (item.m_TokenCurrencyPrice2 > 0 && item.m_TokenCurrencyType2 == _global.Enums.Token.e_Cash) {
-			return  item.m_TokenCurrencyPrice2 + " PAX";
-		}
-		return null;
-	}
 	
 	public static function getInstance() {
 		return singleton;
