@@ -11,6 +11,7 @@ import com.GameInterface.ShopInterface;
 import com.Utils.LDBFormat;
 import com.Utils.ID32;
 import com.Utils.Archive;
+import com.Utils.Signal;
 
 class ElgaCore {
 	
@@ -34,14 +35,18 @@ class ElgaCore {
 	
 	private var m_ExceptionByLang:Object;
 	
+	private var m_SignalExceptionChanged:Signal;
+	
 	public function subscribeToWardrobeChange(functionPointer, target) {
-		m_WardrobeInventory.SignalItemAdded.Connect( functionPointer, target );
-        m_WardrobeInventory.SignalItemChanged.Connect( functionPointer, target );
-        m_WardrobeInventory.SignalItemRemoved.Connect( functionPointer, target );
+		m_WardrobeInventory.SignalItemAdded.Connect(functionPointer, target);
+        m_WardrobeInventory.SignalItemChanged.Connect(functionPointer, target);
+        m_WardrobeInventory.SignalItemRemoved.Connect(functionPointer, target);
         
-        m_EquippedInventory.SignalItemAdded.Connect( functionPointer, target );
-        m_EquippedInventory.SignalItemChanged.Connect( functionPointer, target );
-        m_EquippedInventory.SignalItemRemoved.Connect( functionPointer, target );
+        m_EquippedInventory.SignalItemAdded.Connect(functionPointer, target);
+        m_EquippedInventory.SignalItemChanged.Connect(functionPointer, target);
+        m_EquippedInventory.SignalItemRemoved.Connect(functionPointer, target);
+		
+		m_SignalExceptionChanged.Connect(functionPointer, target);
 	}
 	
 	public function unsubscribeToWardrobeChange(functionPointer, target) {
@@ -52,6 +57,8 @@ class ElgaCore {
         m_EquippedInventory.SignalItemAdded.Disconnect( functionPointer, target );
         m_EquippedInventory.SignalItemChanged.Disconnect( functionPointer, target );
         m_EquippedInventory.SignalItemRemoved.Disconnect( functionPointer, target );
+		
+		m_SignalExceptionChanged.Disconnect(functionPointer, target);
 	}
 	
 	public function ElgaCore() {
@@ -185,6 +192,8 @@ class ElgaCore {
 			m_ColorsException["Loose Bingo! T-Shirt"] = ["Loose T-Shirt","Bingo!"];
 			m_ColorsException["Loose Mr Freezie T-Shirt"] = ["Loose T-Shirt","Mr Freezie"];
 		}
+		
+		m_SignalExceptionChanged = new Signal();
 		
 	}
 	
@@ -375,10 +384,14 @@ class ElgaCore {
 				if (clothingItem.m_IsNameCustom) {
 					if (clothingItem.m_CustomCategory == null) {
 						firstNodeName = clothingItem.m_CustomShortName;
+						//Chat.SignalShowFIFOMessage.Emit("Elga: Load Clothing Exception: " + clothingItem.m_Name + "|" + firstNodeName , 0);
 					} else {
 						firstNodeName = clothingItem.m_CustomCategory;
 						secondNodeName = clothingItem.m_CustomShortName;
+						//Chat.SignalShowFIFOMessage.Emit("Elga: Load Clothing Exception: " + clothingItem.m_Name + "|" + firstNodeName + ":" + secondNodeName , 0);
 					}
+					
+
 				} else {
 					if (clothingItem.m_DefaultCategory == null) {
 						firstNodeName = clothingItem.m_DefaultShortName;
@@ -581,8 +594,10 @@ class ElgaCore {
 			if (isDefaultValue) {
 				delete m_ExceptionByLang[m_LanguageCode][fullName];
 				changed = true;
+				//Chat.SignalShowFIFOMessage.Emit("Elga: Deleted Clothing Exception: " + fullName , 0);
 			} else {
 				changed = cse.update("", newCategory, newShortName);
+				//Chat.SignalShowFIFOMessage.Emit("Elga: Updated Clothing Exception: " + fullName , 0);
 			}
 		} else {
 			if (!isDefaultValue) {
@@ -591,7 +606,13 @@ class ElgaCore {
 					m_ExceptionByLang[m_LanguageCode] = new Object();
 				}
 				m_ExceptionByLang[m_LanguageCode][fullName] = cse;
+				changed = true;
+				//Chat.SignalShowFIFOMessage.Emit("Elga: New Clothing Exception: " + fullName + "|" + newCategory + ":" + newShortName , 0);
 			}
+		}
+		if (changed) {
+			Chat.SignalShowFIFOMessage.Emit("Elga: Clothing Exception changed: " + fullName , 0);
+			m_SignalExceptionChanged.Emit(this);
 		}
 	}
 	

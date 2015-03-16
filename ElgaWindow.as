@@ -55,7 +55,6 @@ class ElgaWindow extends MovieClip {
 	private var m_PreviousFilterValue = "";
 	
 	// UI instances
-	private var m_CodeEntryBox:TextArea;
 	private var m_Background:MovieClip
 	private var m_CloseButton:Button;
 	private var m_WearAllPreview:Button;
@@ -64,7 +63,6 @@ class ElgaWindow extends MovieClip {
 	private var m_PreviewText:Object;
 	private var m_ShowVendorText:Object;
 	private var m_ShowVendorCheckBox:CheckBox;
-	private var m_ShowNameCustomizationWindowButton:Button;
 	
 	private var m_SecondItemList:ScrollingList;
 	private var m_ThirdItemList:ScrollingList;
@@ -109,9 +107,16 @@ class ElgaWindow extends MovieClip {
 	
 	private var m_ElgaCore:ElgaCore;
 	
+	private var m_CustomNameWindowButton:Button;
 	private var m_IsCustomNameWindowOpen:Boolean = false;
 	private var m_CustomNameWindow:MovieClip;
+	
 	private var m_This:MovieClip;
+	
+	private var m_ImportExportButton:Button;
+	private var m_ImportExportWindowOpen:Boolean = false;
+	private var m_ImportExportWindow:MovieClip;
+	
 	
 	public function ElgaWindow() {
 		super();
@@ -255,9 +260,12 @@ class ElgaWindow extends MovieClip {
 		//m_FilterBox.SetDefaultText(LDBFormat.LDBGetText("GenericGUI", "SearchText"));
 		m_FilterBox.addEventListener("search", this, "FilterTextChanged");
 		
-		m_ShowNameCustomizationWindowButton.addEventListener("click", this, "OnClickNameCustomiwationWindowButton");
-		m_ShowNameCustomizationWindowButton.addEventListener("focusIn", this, "RemoveFocus");
-		//m_ShowNameCustomizationWindowButton.label = LDBFormat.LDBGetText("GenericGUI", "Save");
+		m_CustomNameWindowButton.addEventListener("click", this, "OnClickNameCustomizationWindowButton");
+		m_CustomNameWindowButton.addEventListener("focusIn", this, "RemoveFocus");
+		//m_CustomNameWindowButton.label = LDBFormat.LDBGetText("GenericGUI", "Save");
+		
+		m_ImportExportButton.addEventListener("click", this, "OnClickImportExportWindowButton");
+		m_ImportExportButton.addEventListener("focusIn", this, "RemoveFocus");
 		
 		InitializePreview();
 		
@@ -311,7 +319,7 @@ class ElgaWindow extends MovieClip {
 		SelectClothingByName(clothingName);
 	}
 	
-	private function OnClickNameCustomiwationWindowButton(event:Object) {
+	private function OnClickNameCustomizationWindowButton(event:Object) {
 		if (m_IsCustomNameWindowOpen === true) {
 			m_IsCustomNameWindowOpen = false;
 			m_CustomNameWindow.removeMovieClip();
@@ -323,6 +331,22 @@ class ElgaWindow extends MovieClip {
 			});
 			m_CustomNameWindow._y =  m_This._height + 6;
 			//m_CustomNameWindow.setParentWindow(this);
+		}
+	}
+	
+	private function OnClickImportExportWindowButton(event:Object) {
+		if (m_ImportExportWindowOpen === true) {
+			m_ImportExportWindowOpen = false;
+			m_ImportExportWindow.removeMovieClip();
+			m_ImportExportWindow = null; // good ?
+		} else {
+			m_ImportExportWindowOpen = true;
+			Chat.SignalShowFIFOMessage.Emit("OnClickImportExportWindowButton Attach", 0);
+			m_ImportExportWindow = m_This.attachMovie("ImportExportWindow", "m_ImportExportWindow", m_This.getNextHighestDepth(), {
+				m_ElgaCore : m_ElgaCore
+			});
+			Chat.SignalShowFIFOMessage.Emit("OnClickImportExportWindowButton After Attach", 0);
+			m_ImportExportWindow._x =  m_This._width + 6;
 		}
 	}
 	
@@ -952,9 +976,5 @@ class ElgaWindow extends MovieClip {
 	
 	public static function getInstance() {
 		return singleton;
-	}
-	
-	public function getTextArea():TextArea {
-		return this.m_CodeEntryBox;
 	}
 }

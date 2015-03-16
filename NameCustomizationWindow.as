@@ -27,7 +27,7 @@ import mx.utils.Delegate;
 import gfx.controls.Button;
 import gfx.controls.CheckBox;
 import gfx.controls.ScrollingList;
-import gfx.controls.TextArea;
+import gfx.controls.TextInput
 
 class NameCustomizationWindow extends MovieClip {
 	
@@ -74,6 +74,15 @@ class NameCustomizationWindow extends MovieClip {
 		
 		m_ResetButton.addEventListener("click", this, "OnClickResetButton");
 		m_ResetButton.addEventListener("focusIn", this, "RemoveFocus");
+		
+		
+	}
+	
+	public function RevertFullNameValue(event:Object) {
+		Chat.SignalShowFIFOMessage.Emit("RevertFullNameValue", 0);
+		if (m_CurrentClothNode != null) {
+			m_FullNameValue = m_CurrentClothNode.getNodeData().m_Name;
+		}
 	}
 	
 	// Window wide events
@@ -85,7 +94,7 @@ class NameCustomizationWindow extends MovieClip {
 		if (m_CurrentClothNode != null) {
 			var clothingItem = m_CurrentClothNode.getNodeData();
 			var fullName:String = clothingItem.m_Name;
-			var customCategory = m_CustomShortNameValue.text;
+			var customCategory = m_CustomCategoryValue.text;
 			var customShortName = m_CustomShortNameValue.text;
 			// TODO ? trim names ? what if empty ?
 			
@@ -97,13 +106,34 @@ class NameCustomizationWindow extends MovieClip {
 	public function OnClickCancelButton():Void {
 		if (m_CurrentClothNode != null) {
 			var clothingItem:Object = m_CurrentClothNode.getNodeData();
-			
-			//setCurrentCloth(clothingNode)
+			var depth:Number = 1;
+			if (clothingItem.m_IsNameCustom) {
+				if (clothingItem.m_CustomCategory != null && clothingItem.m_CustomCategory != "") {
+					depth = 2;
+				}
+			} else {
+				if (clothingItem.m_DefaultCategory != null && clothingItem.m_DefaultCategory != "") {
+					depth = 2;
+				}
+			}
+			setCurrentCloth(m_CurrentClothNode, depth);
 		}
 		return;
 	}
 	
+	// put back the default value in the fields (currently does not save)
 	public function OnClickResetButton():Void {
+		if (m_CurrentClothNode != null) {
+			var clothingItem:Object = m_CurrentClothNode.getNodeData();
+			m_FullNameValue.text = clothingItem.m_Name;
+			m_DefaultShortNameValue.text = clothingItem.m_DefaultShortName;
+			m_DefaultCategoryValue.text =  definedOrEmpty(clothingItem.m_DefaultCategory);
+			//if (m_CustomCategoryValue.text != "" || m_CustomShortNameValue.text != "")
+			// change -> activate save button	
+			m_CustomCategoryValue.text = "";
+			m_CustomShortNameValue.text = "";
+		}
+		return;
 	}
 	
 	public function setCurrentCloth(clothingNode:Node, depth:Number):Void {
@@ -123,10 +153,18 @@ class NameCustomizationWindow extends MovieClip {
 		}
 		
 		m_FullNameValue.text = fullName;
-		m_DefaultShortNameValue.text = clothingItem.m_DefaultShortName;
-		m_DefaultCategoryValue.text =  clothingItem.m_DefaultCategory;
-		m_CustomShortNameValue.text = clothingItem.m_CustomShortName;
-		m_CustomCategoryValue.text = clothingItem.m_CustomCategory;
+		m_DefaultShortNameValue.text = definedOrEmpty(clothingItem.m_DefaultShortName);
+		m_DefaultCategoryValue.text =  definedOrEmpty(clothingItem.m_DefaultCategory);
+		
+		m_CustomShortNameValue.text = definedOrEmpty(clothingItem.m_CustomShortName);
+		m_CustomCategoryValue.text = definedOrEmpty(clothingItem.m_CustomCategory);
+		
+		//disable save button	
+
+	}
+	
+	private function definedOrEmpty(name:String):String {
+		return (name == null ? "" : name);
 	}
 	
 	public function setCurrentCategory(categoryNode:Node):Void {

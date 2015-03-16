@@ -1,34 +1,19 @@
 ﻿import com.Components.Window;
-import com.Components.SearchBox;
 
 import com.GameInterface.Chat;
-import com.GameInterface.DistributedValue;
-import com.GameInterface.Game.Character;
-import com.GameInterface.Game.CharacterBase;
-import com.GameInterface.Inventory;
-import com.GameInterface.InventoryItem;
-import com.GameInterface.Log;
-import com.GameInterface.ShopInterface;
-import com.GameInterface.Tooltip.TooltipUtils;
-import com.GameInterface.Tooltip.TooltipInterface;
+
+import ElgaCore;
 
 
-import com.thesecretworld.chronicle.Gongju.Collection.Node;
-import GongjuListItemRenderer;
-
-import com.Utils.ID32;
-import com.Utils.LDBFormat;
-import com.Utils.Signal;
-
-import flash.geom.Point;
-
-import mx.utils.Delegate;
-
-import gfx.controls.Button;
-import gfx.controls.CheckBox;
-import gfx.controls.TextArea;
 
 class ImportExportWindow extends MovieClip {
+	
+	var m_CodeEntryBox:MovieClip;
+	var m_ButtonA:MovieClip;
+	var m_ButtonB:MovieClip;
+	var m_ButtonC:MovieClip;
+	
+	var m_ElgaCore:ElgaCore;
 	
 	public function configUI()
     {
@@ -50,7 +35,7 @@ class ImportExportWindow extends MovieClip {
 	
 	private function handleStopDrag(buttonIdx:Number) {
 		this.stopDrag();
-		SignalPositionChanged.Emit(this._x, this._y);
+		//SignalPositionChanged.Emit(this._x, this._y);
 	}
 	
 	//Misc
