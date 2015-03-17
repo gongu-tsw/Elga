@@ -18,11 +18,26 @@ class ImportExportWindow extends MovieClip {
 	public function configUI()
     {
         super.configUI();
+		
+		m_ButtonA.addEventListener("click", this, "listAllWearedClothes");
+		m_ButtonA.addEventListener("focusIn", this, "RemoveFocus");
+		
+		m_ButtonB.addEventListener("click", this, "listAllOwnedClothes");
+		m_ButtonB.addEventListener("focusIn", this, "RemoveFocus");
+		
 	}
 	
 	// Window wide events
 	public function onLoad() {
 		configUI();
+	}
+	
+	public function listAllWearedClothes(event:Object):Void {
+		m_CodeEntryBox.text = m_ElgaCore.listAllWearedClothes();
+	}
+	
+	public function listAllOwnedClothes(event:Object):Void {
+		m_CodeEntryBox.text = m_ElgaCore.listAllOwnedClothes();
 	}
 	
 	private function onEnterFrame()

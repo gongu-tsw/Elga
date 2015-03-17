@@ -341,11 +341,9 @@ class ElgaWindow extends MovieClip {
 			m_ImportExportWindow = null; // good ?
 		} else {
 			m_ImportExportWindowOpen = true;
-			Chat.SignalShowFIFOMessage.Emit("OnClickImportExportWindowButton Attach", 0);
 			m_ImportExportWindow = m_This.attachMovie("ImportExportWindow", "m_ImportExportWindow", m_This.getNextHighestDepth(), {
 				m_ElgaCore : m_ElgaCore
 			});
-			Chat.SignalShowFIFOMessage.Emit("OnClickImportExportWindowButton After Attach", 0);
 			m_ImportExportWindow._x =  m_This._width + 6;
 		}
 	}

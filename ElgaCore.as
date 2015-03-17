@@ -272,6 +272,26 @@ class ElgaCore {
 		return false;
 	}
 	
+	public function listAllWearedClothes():String {
+		var result:String = "";
+		for (var key in m_LocationLabels ) {
+			var invItem:InventoryItem = m_EquippedInventory.GetItemAt(key);
+			if (invItem != undefined && invItem.m_Name != undefined)
+				result = result + invItem.m_Name + "\n";
+        }
+		return result;
+	}
+	
+	public function listAllOwnedClothes():String {
+		var result:String = listAllWearedClothes();
+		for ( var i:Number = 0 ; i < m_WardrobeInventory.GetMaxItems() ; ++i ) {
+			var invItem:InventoryItem = m_WardrobeInventory.GetItemAt(i);
+			if (invItem != undefined && invItem.m_Name != undefined) {
+				result = result + invItem.m_Name + "\n";
+			}
+		}
+		return result;
+	}
 	
 	public function getClothingList(filter:String, showVendorItems:Boolean):Node {
 		m_SortedItems = new Object();
@@ -624,11 +644,12 @@ class ElgaCore {
 		return returnValue;
 	}
 	
-	private function loadAllCSEFromArchiveArray(cseArchiveArray:Array) {
+	public function loadAllCSEFromArchiveArray(cseArchiveArray:Array) {
 		m_ExceptionByLang = new Object();
 		
 		for (var idx = 0; idx < cseArchiveArray.length; idx++) {
 			var cseArchive:Archive = cseArchiveArray[idx];
+			Chat.SignalShowFIFOMessage.Emit(cseArchive.toString(), 0);
 			var cse:ClothingSortException = ClothingSortException.buildFromArchive(cseArchive);
 			
 			var lang:String = cse.getLang();
@@ -641,7 +662,7 @@ class ElgaCore {
 		}
 	}
 	
-	private function serializeAllCSE():Array {
+	public function serializeAllCSE():Array {
 		var serializedDeckArray:Array = new Array();
 		
 		for (var lang:String in m_ExceptionByLang) {
@@ -649,10 +670,10 @@ class ElgaCore {
 			for (var realName:String in exceptionDict) {
 				var cse:ClothingSortException = exceptionDict[realName];
 				var cseArchive:Archive = cse.getArchive();
+				Chat.SignalShowFIFOMessage.Emit(cseArchive.toString(), 0);
 				serializedDeckArray.push(cseArchive);
 			}
 		}
-		
 		return serializedDeckArray;
 	}
 }
