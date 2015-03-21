@@ -75,6 +75,10 @@ class com.thesecretworld.chronicle.Gongju.Data.ClothingSortException {
 		return archive;
 	}
 	
+	public function toString():String {
+		return getRealName() +'|' + getCustomCategory() + '|' + getCustomName();
+	}
+	
 	public function update(customPlacement:String,
 			customCategory:String, customName:String):Boolean {
 		var changed:Boolean = false;

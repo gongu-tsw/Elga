@@ -644,12 +644,65 @@ class ElgaCore {
 		return returnValue;
 	}
 	
+	public function exportClothingSortException ():String {
+		var result:String = "ELGA_EXPORT;0.5;" + m_LanguageCode + "\n";
+		if (m_ExceptionByLang != null) {
+			var exceptions = m_ExceptionByLang[m_LanguageCode];
+			if (exceptions != null) {
+				for (var realName:String in exceptions) {
+					var cse:ClothingSortException = exceptions[realName];
+					var realName = cse.getRealName();
+					var customCategory = cse.getCustomCategory();
+					var customShortName = cse.getCustomName();
+					result = result + realName + "|" + customCategory  + "|" + customShortName + "\n";
+				}
+			}
+		}
+		
+		return result;
+	}
+	
+	// WE RESET THE EXCEPTIONS
+	public function importClothingSortException (text:String):Void {
+		var textSplit:Array = text.split(String.fromCharCode(13));
+		var firstLine = textSplit.shift();
+		var firstLineSplit = firstLine.split(";");
+		if (firstLineSplit[0] != "ELGA_EXPORT")
+			return;
+		var version:String = firstLineSplit[1];
+		var languageCode:String = firstLineSplit[2];
+		if (languageCode != m_LanguageCode)
+			return; // wrong language code -> will not be usable
+			
+		if (m_ExceptionByLang == null) {
+			m_ExceptionByLang = new Object();
+		}
+		
+		var exceptions = new Object();
+		m_ExceptionByLang[m_LanguageCode] = exceptions; // reset the current language exceptions
+		
+		for (var idx = 0; idx < textSplit.length; idx++ ) {
+			var line:String = textSplit[idx];
+			var lineSplit:Array = line.split("|");
+			if (lineSplit.length == 3) {
+				var fullName = lineSplit[0];
+				var categoryName = lineSplit[1];
+				var shortName = lineSplit[2];
+				var cse:ClothingSortException = new ClothingSortException(fullName, "", "", m_LanguageCode, categoryName, shortName);
+				exceptions[fullName] = cse; 
+			}
+		}
+		
+		m_SignalExceptionChanged.Emit(this);
+	}
+	
 	public function loadAllCSEFromArchiveArray(cseArchiveArray:Array) {
 		m_ExceptionByLang = new Object();
 		
+		Chat.SignalShowFIFOMessage.Emit("Elga: Loading archive", 0);
+		
 		for (var idx = 0; idx < cseArchiveArray.length; idx++) {
 			var cseArchive:Archive = cseArchiveArray[idx];
-			Chat.SignalShowFIFOMessage.Emit(cseArchive.toString(), 0);
 			var cse:ClothingSortException = ClothingSortException.buildFromArchive(cseArchive);
 			
 			var lang:String = cse.getLang();
@@ -665,12 +718,13 @@ class ElgaCore {
 	public function serializeAllCSE():Array {
 		var serializedDeckArray:Array = new Array();
 		
+		Chat.SignalShowFIFOMessage.Emit("Elga: serializing", 0);
+		
 		for (var lang:String in m_ExceptionByLang) {
 			var exceptionDict:Object = m_ExceptionByLang[lang];
 			for (var realName:String in exceptionDict) {
 				var cse:ClothingSortException = exceptionDict[realName];
 				var cseArchive:Archive = cse.getArchive();
-				Chat.SignalShowFIFOMessage.Emit(cseArchive.toString(), 0);
 				serializedDeckArray.push(cseArchive);
 			}
 		}
