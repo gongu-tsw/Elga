@@ -1,6 +1,6 @@
 ﻿import com.Components.Window;
-
 import com.GameInterface.Chat;
+import com.Utils.LDBFormat;
 
 import ElgaCore;
 
@@ -31,6 +31,26 @@ class ImportExportWindow extends MovieClip {
 		
 		m_ExportButton.addEventListener("click", this, "exportData");
 		m_ExportButton.addEventListener("focusIn", this, "RemoveFocus");
+		
+		var languageCode:String = LDBFormat.GetCurrentLanguageCode();
+		if (languageCode == "fr") {
+			m_ExportButton.label = "Exporter";
+			m_ImportButton.label = "Importer";
+			m_ListAllClothingButton.label = "Liste des vêtements"
+			m_ListWearedClothingButton.label = "Vêtements portés"
+		}
+		if (languageCode == "en") {
+			m_ExportButton.label = "Export";
+			m_ImportButton.label = "Import";
+			m_ListAllClothingButton.label = "Clothes list"
+			m_ListWearedClothingButton.label = "Weared clothes"
+		}
+		if (languageCode == "de") {
+			m_ExportButton.label = "Exportieren";
+			m_ImportButton.label = "Importieren";
+			m_ListAllClothingButton.label = "Kleidung Liste"
+			m_ListWearedClothingButton.label = "Getragene Kleidung"
+		}
 		
 	}
 	

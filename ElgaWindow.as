@@ -549,9 +549,10 @@ class ElgaWindow extends MovieClip {
 						m_PreviewedClothing[clothingItem.m_Placement] = clothingItem;
 					}
 					
-					if (m_IsCustomNameWindowOpen) {
-						m_CustomNameWindow.setCurrentCategory(thirdListParentNode);
-					}
+					// NOT YET, maybe for later default category name customization
+					//if (m_IsCustomNameWindowOpen) {
+					//	m_CustomNameWindow.setCurrentCategory(thirdListParentNode);
+					//}
 				}
 			}
 		}
@@ -749,7 +750,9 @@ class ElgaWindow extends MovieClip {
 	// will need update for new translations and colors too
 	private function InitStaticData() {
 		m_LanguageCode = LDBFormat.GetCurrentLanguageCode();
-		var predefinedColors:Array = null;
+
+		var customNameWindowButtonTooltip:String = null;
+		var importExportWindowButtonTooltip:String = null;
 		
 		if (m_LanguageCode == "de") {
 			m_WearText.text = "Aktuell";
@@ -757,6 +760,8 @@ class ElgaWindow extends MovieClip {
 			m_WearAllPreview.label = "Alle tragen";
 			m_ResetPreview.label = "Reset Vorschau";
 			m_ShowVendorText.text = "Inventar von Verkäufers zeigen";
+			customNameWindowButtonTooltip = "Öffnen/Schließen der Name Anpassungsfenster";
+			importExportWindowButtonTooltip = "Öffnen/Schließen der Import/Export-Fenster";
 		}
 		
 		if (m_LanguageCode == "fr") {
@@ -765,6 +770,8 @@ class ElgaWindow extends MovieClip {
 			m_WearAllPreview.label = "Tout porter";
 			m_ResetPreview.label = "RAZ de l'aperçu";
 			m_ShowVendorText.text = "Montrer l'inventaire des vendeurs";
+			customNameWindowButtonTooltip = "Ouvrir/fermer la fenêtre de personnalisation des noms";
+			importExportWindowButtonTooltip = "Ouvrir/fermer la fenêtre d'import/export";
 		}
 
 		if (m_LanguageCode == "en") {
@@ -773,7 +780,16 @@ class ElgaWindow extends MovieClip {
 			m_WearAllPreview.label = "Wear all";
 			m_ResetPreview.label = "Preview reset";
 			m_ShowVendorText.text = "Show vendor's inventory";
+			customNameWindowButtonTooltip = "Show/hide the name customization window";
+			importExportWindowButtonTooltip = "Show/hide the import/export window";
+			
 		}
+		
+		var tooltipWidth:Number = 200;
+		var tooltipOrientation = TooltipInterface.e_OrientationVertical;
+		// does not work: TODO : make it work...
+		TooltipUtils.AddTextTooltip(m_CustomNameWindowButton, customNameWindowButtonTooltip, tooltipWidth, tooltipOrientation, false);
+		TooltipUtils.AddTextTooltip(m_ImportExportButton, importExportWindowButtonTooltip, tooltipWidth, tooltipOrientation, false);
 		
 		/*
 		1		??????????????? multi-emplacement

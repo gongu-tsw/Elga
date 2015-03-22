@@ -75,7 +75,25 @@ class NameCustomizationWindow extends MovieClip {
 		m_ResetButton.addEventListener("click", this, "OnClickResetButton");
 		m_ResetButton.addEventListener("focusIn", this, "RemoveFocus");
 		
+		m_SaveButton.label = LDBFormat.LDBGetText("GenericGUI", "Save");
+		m_CancelButton.label = LDBFormat.LDBGetText("GenericGUI", "Cancel");
 		
+		var languageCode:String = LDBFormat.GetCurrentLanguageCode();
+		if (languageCode == "en") {
+			
+		}
+		
+		if (languageCode == "fr") {
+			m_FullNameText.text = "Nom complet";
+			m_DefaultCategoryText.text = "Catégorie d'origine";
+			m_DefaultShortNameText.text = "Nom d'origine";
+			m_CustomCategoryText.text = "Catégorie";
+			m_CustomShortNameText.text = "Nom";
+		}
+		
+		if (languageCode == "de") {
+			
+		}
 	}
 	
 	public function RevertFullNameValue(event:Object) {
