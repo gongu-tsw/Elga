@@ -4,8 +4,6 @@ import com.Utils.LDBFormat;
 
 import ElgaCore;
 
-
-
 class ImportExportWindow extends MovieClip {
 	
 	var m_CodeEntryBox:MovieClip;
@@ -13,6 +11,9 @@ class ImportExportWindow extends MovieClip {
 	var m_ListAllClothingButton:MovieClip;
 	var m_ImportButton:MovieClip;
 	var m_ExportButton:MovieClip;
+	
+	private var m_ImportTypeWindowOpen:Boolean = false;
+	private var m_ImportTypeWindow:MovieClip;
 	
 	var m_ElgaCore:ElgaCore;
 	
@@ -26,7 +27,7 @@ class ImportExportWindow extends MovieClip {
 		m_ListAllClothingButton.addEventListener("click", this, "listAllOwnedClothes");
 		m_ListAllClothingButton.addEventListener("focusIn", this, "RemoveFocus");
 		
-		m_ImportButton.addEventListener("click", this, "importData");
+		m_ImportButton.addEventListener("click", this, "OnClickImportTypeWindowButton");
 		m_ImportButton.addEventListener("focusIn", this, "RemoveFocus");
 		
 		m_ExportButton.addEventListener("click", this, "exportData");
@@ -67,8 +68,38 @@ class ImportExportWindow extends MovieClip {
 		m_CodeEntryBox.text = m_ElgaCore.listAllOwnedClothes();
 	}
 	
-	public function importData(event:Object):Void {
-		m_ElgaCore.importClothingSortException(m_CodeEntryBox.text);
+	private function OnClickImportTypeWindowButton(event:Object) {
+		if (m_ImportTypeWindowOpen === true) {
+			m_ImportTypeWindowOpen = false;
+			m_ImportTypeWindow.removeMovieClip();
+			m_ImportTypeWindowOpen = null; // good ?
+		} else {
+			m_ImportTypeWindowOpen = true;
+			m_ImportTypeWindow = this.attachMovie("ImportTypeWindow", "m_ImportTypeWindow", this.getNextHighestDepth(), {
+				m_ElgaCore : m_ElgaCore,
+				m_ImportExportWindow : this
+			});
+			//m_ImportTypeWindow._x =  this._x;
+		}
+	}
+	
+	public function resetImport():Void {
+		m_ElgaCore.importClothingSortException(m_CodeEntryBox.text, ElgaCore.IMPORTTYPE_RESET);
+		OnClickImportTypeWindowButton();
+	}
+	
+	public function mergeImport():Void {
+		m_ElgaCore.importClothingSortException(m_CodeEntryBox.text, ElgaCore.IMPORTTYPE_REPLACE);
+		OnClickImportTypeWindowButton();
+	}
+	
+	public function niceImport():Void {
+		m_ElgaCore.importClothingSortException(m_CodeEntryBox.text, ElgaCore.IMPORTTYPE_LET);
+		OnClickImportTypeWindowButton();
+	}
+	
+	public function cancelImport():Void {
+		OnClickImportTypeWindowButton();
 	}
 	
 	public function exportData(event:Object):Void {

@@ -29,8 +29,6 @@ class ElgaCore {
 	private var m_LanguageCode:String;
 	private var m_DefaultTranslation:String;
 	
-	// used for sorting a clothing correctly when it's not with the general mechanic (funcom fault?)
-	private var m_ColorsException:Object;
 	private var m_ClothingSetNames:Object;
 	
 	private var m_ExceptionByLang:Object;
@@ -120,77 +118,13 @@ class ElgaCore {
 		
 		if (m_LanguageCode == "de") {
 			m_DefaultTranslation = "Standard";
-			
-			m_ColorsException = new Object();
-			m_ColorsException["Teen Queen - Abgeschnittene Jeanshose mit Blumengürtel"] = ["Abgeschnittene Jeanshose","mit Blumengürtel (Teen Queen)", null];
-			
-			//m_ColorsException["Langer Ledermantel"] = ["Langer Ledermantel", "(violett)"];
-			m_ColorsException["MMORPG-T-Shirt"] = ["MMORPG-T-Shirt", "weiß"];
-			m_ColorsException["ARG-Hoodie, Die schwarzen Wachmänner"] = ["ARG-Hoodie, Die schwarzen Wachmänner", null];
-			
-			m_ColorsException["Gestreifte Kapuzenjacke, Regenbogen"] = ["Gestreifte Kapuzenjacke (geöffnet)","Regenbogen"];
-			m_ColorsException["Gestreifte Kapuzenjacke, braun und orange"] = ["Gestreifte Kapuzenjacke (geöffnet)","braun und orange"];
-			m_ColorsException["Gestreifte Kapuzenjacke, grün und gelb"] = ["Gestreifte Kapuzenjacke (geöffnet)","grün und gelb"]
-			m_ColorsException["Gestreifte Kapuzenjacke, pink und blau"] = ["Gestreifte Kapuzenjacke (geöffnet)","pink und blau"]
-			m_ColorsException["Gestreifte Kapuzenjacke, schwarz und rot"] = ["Gestreifte Kapuzenjacke (geöffnet)","schwarz und rot"]
 		}
 		if (m_LanguageCode == "fr") {
 			m_DefaultTranslation = "défaut";
-			
-			m_ColorsException = new Object();
-			// Mini-veste -> Mini veste (no dash)
-			m_ColorsException["Bande main droite en tissu, marron"] = ["Bande main droite, tissu", "marron"]; 
-			m_ColorsException["Femme fataleMini-veste en cuir, marron"] = ["Mini veste en cuir", "marron (Femme fatale)"]; 
-			m_ColorsException["Pantalon cargo camouflage"] = ["Pantalon cargo", "camouflage"];
-			m_ColorsException["Mini-short en denim bleu"] = ["Mini-short", "en denim bleu"];
-			m_ColorsException["T-shirt \"Curse\", noir"] = ["T-shirt \"Curse\"", "noir"];
-			m_ColorsException["Jonc, rouge"] = ["Joncs", "rouge"];
-			//m_ColorsException["Manteau long en cuir"] = ["Manteau long en cuir", "(violet)"];
-			
-			m_ColorsException["Tête de citrouille grimaçante"] = ["Tête de citrouille", "grimançante"];
-			m_ColorsException["Tête de citrouille grimaçante, ensanglantée"] = ["Tête de citrouille", "grimaçante, ensanglantée"];
-			m_ColorsException["Tête de citrouille sanglante"] = ["Tête de citrouille", "sanglante"];
-			m_ColorsException["Tête-de-citrouille"] = ["Tête de citrouille", "Tête-de-citrouille"];
-			m_ColorsException["Tête-de-lanterne"] = ["Tête de citrouille", "Tête-de-lanterne"];
-			m_ColorsException["Tête de citrouille - Jack-O"] = ["Tête de citrouille", "Jack-O"];
-			m_ColorsException["Tête de citrouille - Prince du carré"] = ["Tête de citrouille", "Prince du carré"];
-			
-			m_ColorsException["Veste de policier de Kingsmouth maculée de sang"] = ["Veste de policier de Kingsmouth", "maculée de sang"];
-			m_ColorsException["Sandales compensées, blanch"] = ["Sandales compensées", "blanc"];
-			
-			m_ColorsException["Haut-de-forme à tentacules ardents"] = ["Haut-de-forme à tentacules", "ardents"];
-			m_ColorsException["Haut-de-forme à tentacules givrés"] = ["Haut-de-forme à tentacules", "givrés"];
-			m_ColorsException["Haut-de-forme à tentacules toxiques"] = ["Haut-de-forme à tentacules", "toxiques"];
-			
-			m_ColorsException["Veste à capuche rayée, arc-en-ciel"] = ["Veste à capuche rayée (ouverte)","arc-en-ciel"];
-			m_ColorsException["Veste à capuche rayée, marron et orange"] = ["Veste à capuche rayée (ouverte)","marron et orange"];
-			m_ColorsException["Veste à capuche rayée, noir et rouge"] = ["Veste à capuche rayée (ouverte)","noir et rouge"];
-			m_ColorsException["Veste à capuche rayée, rose et bleu"] = ["Veste à capuche rayée (ouverte)","rose et bleu"];
-			m_ColorsException["Veste à capuche rayée, vert et jaune"] = ["Veste à capuche rayée (ouverte)","vert et jaune"];
 		}
 
 		if (m_LanguageCode == "en") {
 			m_DefaultTranslation = "default";
-			
-			m_ColorsException = new Object();
-			m_ColorsException["MMORPG T-shirt"] = ["MMORPG t-shirt", "white"];
-			m_ColorsException["Snakeskin Outfit, tan"] = ["Snakeskin Outfit", "tan"];
-			m_ColorsException["High waist trousers, striped"] = ["High waist trousers", "striped"];
-			m_ColorsException["Striped hoodie jacket, black and red"] = ["Striped hoodie jacket (unzipped)","black and red"];
-			m_ColorsException["Striped hoodie jacket, brown and orange"] = ["Striped hoodie jacket (unzipped)","brown and orange"];
-			m_ColorsException["Striped hoodie jacket, green and yellow"] = ["Striped hoodie jacket (unzipped)","green and yellow"];
-			m_ColorsException["Striped hoodie jacket, pink and blue"] = ["Striped hoodie jacket (unzipped)","pink and blue"];
-			m_ColorsException["Striped hoodie jacket, rainbow"] = ["Striped hoodie jacket (unzipped)","rainbow"];
-			
-			m_ColorsException["Dark Symmetry - Demon's head shorts with stockings, black"] = ["Demon's head shorts","stockings, black (Dark Symmetry)"];
-			m_ColorsException["Rogue Mechanics - Handygirl shorts with stockings, black"] = ["Handygirl shorts","with stockings, black (Rogue Mechanics)"];
-			
-			m_ColorsException["Pumpkinhead, Bloody"] = ["Pumpkinhead","Bloody"];
-			m_ColorsException["Head-O-Lantern"] = ["Pumpkinhead","Head-O-Lantern"];
-			
-			m_ColorsException["Loose \"Believe\" T-Shirt, yellow"] = ["Loose T-Shirt","\"Believe\", yellow"];
-			m_ColorsException["Loose Bingo! T-Shirt"] = ["Loose T-Shirt","Bingo!"];
-			m_ColorsException["Loose Mr Freezie T-Shirt"] = ["Loose T-Shirt","Mr Freezie"];
 		}
 		
 		m_SignalExceptionChanged = new Signal();
@@ -663,33 +597,47 @@ class ElgaCore {
 	}
 	
 	// WE RESET THE EXCEPTIONS
-	public function importClothingSortException (text:String):Void {
+	public static var IMPORTTYPE_RESET:String = "reset";
+	public static var IMPORTTYPE_REPLACE:String = "replace";
+	public static var IMPORTTYPE_LET:String = "let";
+	
+	public function importClothingSortException (text:String, mergeType:String):Void {
 		var textSplit:Array = text.split(String.fromCharCode(13));
 		var firstLine = textSplit.shift();
 		var firstLineSplit = firstLine.split(";");
-		if (firstLineSplit[0] != "ELGA_EXPORT")
+		if (firstLineSplit[0] != "ELGA_EXPORT") {
+			Chat.SignalShowFIFOMessage.Emit("Elga : Import cancelled : Wrong import format", 0);
 			return;
+		}
+			
 		var version:String = firstLineSplit[1];
 		var languageCode:String = firstLineSplit[2];
-		if (languageCode != m_LanguageCode)
+		if (languageCode != m_LanguageCode) {
+			Chat.SignalShowFIFOMessage.Emit("Elga : Import cancelled : Wrong language code", 0);
 			return; // wrong language code -> will not be usable
-			
+		}
+		
 		if (m_ExceptionByLang == null) {
 			m_ExceptionByLang = new Object();
 		}
 		
-		var exceptions = new Object();
-		m_ExceptionByLang[m_LanguageCode] = exceptions; // reset the current language exceptions
+		if (mergeType == IMPORTTYPE_RESET) {
+			m_ExceptionByLang[m_LanguageCode] = new Object(); // reset the current language exceptions
+		}
+
+		var exceptions = m_ExceptionByLang[m_LanguageCode];
 		
 		for (var idx = 0; idx < textSplit.length; idx++ ) {
 			var line:String = textSplit[idx];
 			var lineSplit:Array = line.split("|");
 			if (lineSplit.length == 3) {
 				var fullName = lineSplit[0];
-				var categoryName = lineSplit[1];
-				var shortName = lineSplit[2];
-				var cse:ClothingSortException = new ClothingSortException(fullName, "", "", m_LanguageCode, categoryName, shortName);
-				exceptions[fullName] = cse; 
+				if (exceptions[fullName] == null || mergeType == IMPORTTYPE_REPLACE) {
+					var categoryName = lineSplit[1];
+					var shortName = lineSplit[2];
+					var cse:ClothingSortException = new ClothingSortException(fullName, "", "", m_LanguageCode, categoryName, shortName);
+					exceptions[fullName] = cse; 
+				}
 			}
 		}
 		
@@ -698,8 +646,6 @@ class ElgaCore {
 	
 	public function loadAllCSEFromArchiveArray(cseArchiveArray:Array) {
 		m_ExceptionByLang = new Object();
-		
-		Chat.SignalShowFIFOMessage.Emit("Elga: Loading archive", 0);
 		
 		for (var idx = 0; idx < cseArchiveArray.length; idx++) {
 			var cseArchive:Archive = cseArchiveArray[idx];
@@ -717,8 +663,6 @@ class ElgaCore {
 	
 	public function serializeAllCSE():Array {
 		var serializedDeckArray:Array = new Array();
-		
-		Chat.SignalShowFIFOMessage.Emit("Elga: serializing", 0);
 		
 		for (var lang:String in m_ExceptionByLang) {
 			var exceptionDict:Object = m_ExceptionByLang[lang];
