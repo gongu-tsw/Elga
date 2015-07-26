@@ -88,6 +88,12 @@ function OnModuleActivated(config:Archive) {
 		cseArray = [];
 	}
 	m_ElgaCore.loadAllCSEFromArchiveArray(cseList);
+	
+	var catExArray:Array = config.FindEntryArray("CatEx");
+	if (catExArray == undefined) {
+		catExArray = [];
+	}
+	m_ElgaCore.loadAllCatExceptionFromArchiveArray(catExArray);
 }
 
 function InitIcon() {
@@ -160,11 +166,16 @@ function OnModuleDeactivated() {
 		m_ElgaWindow.removeMovieClip();
 	}
 	
-	// CSE means ClothingSortException
 	if (m_ElgaCore != undefined) {
+		// CSE means ClothingSortException
 		var allCSEArchives:Array = m_ElgaCore.serializeAllCSE()
 		for (var idx:Number = 0; idx < allCSEArchives.length; ++idx) {
 			archive.AddEntry("CSE", allCSEArchives[idx]); 
+		}
+		
+		var allCatExceptionArchives:Array = m_ElgaCore.serializeAllCategoryException()
+		for (var idx:Number = 0; idx < allCatExceptionArchives.length; ++idx) {
+			archive.AddEntry("CatEx", allCSEArchives[idx]); 
 		}
 		m_ElgaCore = undefined;
 	}

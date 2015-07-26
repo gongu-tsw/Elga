@@ -80,7 +80,7 @@ class NameCustomizationWindow extends MovieClip {
 		
 		var languageCode:String = LDBFormat.GetCurrentLanguageCode();
 		if (languageCode == "en") {
-			
+			// takes values from ui
 		}
 		
 		if (languageCode == "fr") {
@@ -92,7 +92,7 @@ class NameCustomizationWindow extends MovieClip {
 		}
 		
 		if (languageCode == "de") {
-			
+			// TODO : have real german translation instead of default english from ui
 		}
 	}
 	
@@ -111,12 +111,17 @@ class NameCustomizationWindow extends MovieClip {
 	public function OnClickSaveButton():Void {
 		if (m_CurrentClothNode != null) {
 			var clothingItem = m_CurrentClothNode.getNodeData();
-			var fullName:String = clothingItem.m_Name;
 			var customCategory = m_CustomCategoryValue.text;
 			var customShortName = m_CustomShortNameValue.text;
 			// TODO ? trim names ? what if empty ?
 			
-			var changed:Boolean = m_ElgaCore.changeClothingException(customCategory, customShortName, clothingItem);
+			m_ElgaCore.changeClothingException(customCategory, customShortName, clothingItem);
+		} else if (m_CurrentCategoryNode != null) {
+			var cagetoryItem = m_CurrentCategoryNode.getNodeData();
+			var customCategory = m_CustomCategoryValue.text;
+			// TODO ? trim names ? what if empty ?
+			
+			m_ElgaCore.changeCategoryException(customCategory, cagetoryItem);
 		}
 		return;
 	}
@@ -148,6 +153,13 @@ class NameCustomizationWindow extends MovieClip {
 			m_DefaultCategoryValue.text =  definedOrEmpty(clothingItem.m_DefaultCategory);
 			//if (m_CustomCategoryValue.text != "" || m_CustomShortNameValue.text != "")
 			// change -> activate save button	
+			m_CustomCategoryValue.text = "";
+			m_CustomShortNameValue.text = "";
+		} else if (m_CurrentCategoryNode != null) {
+			var categoryItem:Object = m_CurrentCategoryNode.getNodeData();
+			m_FullNameValue.text = "";
+			m_DefaultCategoryValue.text = definedOrEmpty(clothingItem.m_DefaultCategory);
+			m_DefaultShortNameValue.text = "";
 			m_CustomCategoryValue.text = "";
 			m_CustomShortNameValue.text = "";
 		}
@@ -189,12 +201,13 @@ class NameCustomizationWindow extends MovieClip {
 		m_CurrentClothNode = null;
 		m_CurrentCategoryNode = categoryNode;
 		var currentCategoryName:String = categoryNode.getNodeName();
+		var categoryData = categoryNode.getNodeData();
 		
 		m_FullNameValue.text = "";
 		m_DefaultShortNameValue.text = "";
-		m_DefaultCategoryValue.text = currentCategoryName;
+		m_DefaultCategoryValue.text = definedOrEmpty(categoryData.m_DefaultCategory);
 		m_CustomShortNameValue.text = "";
-		m_CustomCategoryValue.text = currentCategoryName;
+		m_CustomCategoryValue.text = definedOrEmpty(categoryData.m_CustomCategory);
 	}
 	
 	private function onEnterFrame()

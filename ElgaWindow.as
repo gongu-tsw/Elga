@@ -550,9 +550,9 @@ class ElgaWindow extends MovieClip {
 					}
 					
 					// NOT YET, maybe for later default category name customization
-					//if (m_IsCustomNameWindowOpen) {
-					//	m_CustomNameWindow.setCurrentCategory(thirdListParentNode);
-					//}
+					if (m_IsCustomNameWindowOpen) {
+						m_CustomNameWindow.setCurrentCategory(thirdListParentNode);
+					}
 				}
 			}
 		}

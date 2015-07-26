@@ -1,6 +1,7 @@
 ﻿
 import com.thesecretworld.chronicle.Gongju.Collection.Node;
 import com.thesecretworld.chronicle.Gongju.Data.ClothingSortException;
+import com.thesecretworld.chronicle.Gongju.Data.CategorySortException;
 
 import com.GameInterface.Chat;
 import com.GameInterface.Game.Character;
@@ -32,6 +33,7 @@ class ElgaCore {
 	private var m_ClothingSetNames:Object;
 	
 	private var m_ExceptionByLang:Object;
+	private var m_CatExceptionByLang:Object;
 	
 	private var m_SignalExceptionChanged:Signal;
 	
@@ -361,10 +363,16 @@ class ElgaCore {
 				if (rootNode.hasNodeNamed(firstNodeName)) {
 					//if the first node exist
 					var firstNodeFromRoot = rootNode.getChildNamed(firstNodeName);
+					var firstNodeData = firstNodeFromRoot.getNodeData();
 					
-					if (firstNodeFromRoot.hasNodeData()) { // if the node is direclty a cloth, moving the node to the lower level
+					if (!firstNodeData.m_IsCategory) { // if the node is direclty a cloth, moving the node to the lower level
 						var firstNodeData = firstNodeFromRoot.getNodeData();
-						firstNodeFromRoot.setNodeData(null);
+						var categoryData = {
+							m_IsCategory : true,
+							m_DefaultCategory : firstNodeData.m_DefaultCategory,
+							m_CustomCategory : firstNodeData.m_CustomCategory
+						};
+						firstNodeFromRoot.setNodeData(categoryData);
 						
 						var originalSecondNode:Node = new Node("(" + m_DefaultTranslation + ")");
 						originalSecondNode.setNodeData(firstNodeData);
@@ -389,6 +397,12 @@ class ElgaCore {
 					if (secondNode != null) {
 						secondNode.setNodeData(clothingItem);
 						firstNode.addChild(secondNode);
+						var categoryData = {
+							m_IsCategory : true,
+							m_DefaultCategory : clothingItem.m_DefaultCategory,
+							m_CustomCategory : clothingItem.m_CustomCategory
+						};
+						firstNode.setNodeData(categoryData);
 					}
 					else {
 						firstNode.setNodeData(clothingItem);
@@ -424,6 +438,15 @@ class ElgaCore {
 	}
 	
 	// Cut the name of clothings into 2 parts for elga columns
+	//
+	// clothingItem :
+	//		m_Name : original full name
+	//		m_IsCategory : always false when constructing clothing node
+	//		m_IsNameCustom : is an exception applied to customize the name
+	//		m_CustomCategory : category resulting from exception (can be empty for clothing)
+	//		m_CustomShortName : shortname resulting from exception
+	//		m_DefaultShortName : shortName constructed by default mechanism
+	//		m_DefaultCategory : category constructed by default mechanism (can be empty for clothing)
 	private function getNodeNames(clothingItem):Void {
 		var clothingName:String = clothingItem.m_Name;
 		var firstNodeName:String = clothingName; // groupName, if a split was found, otherwise fullName
@@ -497,6 +520,7 @@ class ElgaCore {
 			clothingItem.m_DefaultCategory = firstNodeName;
 			clothingItem.m_DefaultShortName = secondNodeName;
 		}
+		clothingItem.m_IsCategory = false;
 	}
 	
 	private function setItemTextPrice(item:InventoryItem):String {
@@ -568,6 +592,10 @@ class ElgaCore {
 			Chat.SignalShowFIFOMessage.Emit("Elga: Clothing Exception changed: " + fullName , 0);
 			m_SignalExceptionChanged.Emit(this);
 		}
+	}
+	
+	public function changeCategoryException(newCategory:String, categoryItem:Object) {
+		return;
 	}
 	
 	// if we are putting the default value for a cloth, removing it from the exceptions
@@ -661,6 +689,23 @@ class ElgaCore {
 		}
 	}
 	
+	public function loadAllCatExceptionFromArchiveArray(catExceptionArchiveArray:Array) {
+		m_CatExceptionByLang = new Object();
+		
+		for (var idx = 0; idx < catExceptionArchiveArray.length; idx++) {
+			var catExceptionArchive:Archive = catExceptionArchiveArray[idx];
+			var catex:CategorySortException = CategorySortException.buildFromArchive(catExceptionArchive);
+			
+			var lang:String = catex.getLang();
+			var defaultCategory:String = catex.getDefaultCategory();
+			
+			if (m_CatExceptionByLang[lang] == null) {
+				m_CatExceptionByLang[lang] = new Object();
+			}
+			m_CatExceptionByLang[lang][defaultCategory] = catex;
+		}
+	}
+	
 	public function serializeAllCSE():Array {
 		var serializedDeckArray:Array = new Array();
 		
@@ -670,6 +715,20 @@ class ElgaCore {
 				var cse:ClothingSortException = exceptionDict[realName];
 				var cseArchive:Archive = cse.getArchive();
 				serializedDeckArray.push(cseArchive);
+			}
+		}
+		return serializedDeckArray;
+	}
+	
+	public function serializeAllCategoryException():Array {
+		var serializedDeckArray:Array = new Array();
+		
+		for (var lang:String in m_CatExceptionByLang) {
+			var exceptionDict:Object = m_CatExceptionByLang[lang];
+			for (var defaultCategory:String in exceptionDict) {
+				var catex:CategorySortException = exceptionDict[defaultCategory];
+				var catExceptionArchive:Archive = catex.getArchive();
+				serializedDeckArray.push(catExceptionArchive);
 			}
 		}
 		return serializedDeckArray;
