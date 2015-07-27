@@ -19,6 +19,7 @@ import gfx.controls.Button;
 import mx.utils.Delegate;
 
 import ElgaWindow;
+import ElgaCore;
 
 var m_WindowPosition:Point;
 var m_ButtonPosition:Point;
@@ -31,7 +32,7 @@ _global.gongjuShopDict = new Object();
 
 // for Integration in 'Topbar Information Overload' by Viper
 var m_VTIOIsLoadedMonitor:DistributedValue;
-var VTIOAddonInfo:String = "Elgå|Gongju|0.4.1|Elga_OptionWindowOpen|_root.elga_elga.m_Icon"; 
+var VTIOAddonInfo:String = "Elgå|Gongju|0.5|Elga_OptionWindowOpen|_root.elga_elga.m_Icon"; 
 var m_OptionWindowState:DistributedValue;
 
 function SlotCheckVTIOIsLoaded() {
@@ -49,7 +50,7 @@ function SlotOptionWindowState() {
 function onLoad() {
 	ShopInterface.SignalOpenShop.Connect(ElgaSlotOpenShop, this);
 	
-	//next 4 lines for Topbar Information Overload
+	//next 5 lines for Topbar Information Overload
 	m_VTIOIsLoadedMonitor = DistributedValue.Create("VTIO_IsLoaded");
 	m_VTIOIsLoadedMonitor.SignalChanged.Connect(SlotCheckVTIOIsLoaded, this);
 	m_OptionWindowState = DistributedValue.Create("Elga_OptionWindowOpen");
@@ -80,6 +81,13 @@ function OnModuleActivated(config:Archive) {
 		m_Icon._x = m_ButtonPosition.x;
 		m_Icon._y = m_ButtonPosition.y;
 	}
+	
+	m_ElgaCore = new ElgaCore();
+	var cseList:Array = config.FindEntryArray("CSE");
+	if (cseArray == undefined) {
+		cseArray = [];
+	}
+	m_ElgaCore.loadAllCSEFromArchiveArray(cseList);
 }
 
 function InitIcon() {
@@ -93,7 +101,6 @@ function InitIcon() {
 			// Do left mouse button stuff.
 			SetOpenMainWindow((m_ElgaWindow == undefined || !m_ElgaWindow._visible));
 		} else if (buttonID == 2) {
-			// TODO add condition to forbid movement with VTIO
 			if (DistributedValue.GetDValue("VTIO_IsLoaded") != true) {
 				m_ButtonPosition.x = m_Icon._x;
 				m_ButtonPosition.y = m_Icon._y;
@@ -152,9 +159,16 @@ function OnModuleDeactivated() {
 	if (m_ElgaWindow != undefined && m_ElgaWindow != null) {
 		m_ElgaWindow.removeMovieClip();
 	}
-	/*if (m_OpenIcon != undefined && m_OpenIcon != null) {
-		m_OpenIcon.removeMovieClip();
-	}*/
+	
+	// CSE means ClothingSortException
+	if (m_ElgaCore != undefined) {
+		var allCSEArchives:Array = m_ElgaCore.serializeAllCSE()
+		for (var idx:Number = 0; idx < allCSEArchives.length; ++idx) {
+			archive.AddEntry("CSE", allCSEArchives[idx]); 
+		}
+		m_ElgaCore = undefined;
+	}
+	
 	return archive;
 }
 
@@ -192,8 +206,14 @@ function onElgaWindowUnload() {
 
 function SetOpenMainWindow(open:Boolean) {
 	if (open) {
+		if (m_ElgaCore == undefined) {
+			m_ElgaCore = new ElgaCore();
+		}
+		
 		if (m_ElgaWindow == undefined)  {
-			m_ElgaWindow = attachMovie("ElgaWindow", "window", getNextHighestDepth());
+			m_ElgaWindow = attachMovie("ElgaWindow", "window", getNextHighestDepth(), {
+				m_ElgaCore:m_ElgaCore
+			});
 			m_ElgaWindow._x = m_WindowPosition.x;
 			m_ElgaWindow._y = m_WindowPosition.y;
 			m_ElgaWindow.SignalPositionChanged.Connect(onPositionChanged, this);
