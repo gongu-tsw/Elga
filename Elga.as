@@ -32,7 +32,7 @@ _global.gongjuShopDict = new Object();
 
 // for Integration in 'Topbar Information Overload' by Viper
 var m_VTIOIsLoadedMonitor:DistributedValue;
-var VTIOAddonInfo:String = "Elgå|Gongju|0.5|Elga_OptionWindowOpen|_root.elga_elga.m_Icon"; 
+var VTIOAddonInfo:String = "Elgå|Gongju|0.5.1|Elga_OptionWindowOpen|_root.elga_elga.m_Icon"; 
 var m_OptionWindowState:DistributedValue;
 
 function SlotCheckVTIOIsLoaded() {
