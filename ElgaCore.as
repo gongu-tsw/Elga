@@ -344,8 +344,6 @@ class ElgaCore {
 						secondNodeName = clothingItem.m_CustomShortName;
 						//Chat.SignalShowFIFOMessage.Emit("Elga: Load Clothing Exception: " + clothingItem.m_Name + "|" + firstNodeName + ":" + secondNodeName , 0);
 					}
-					
-
 				} else {
 					if (clothingItem.m_DefaultCategory == null) {
 						firstNodeName = clothingItem.m_DefaultShortName;
@@ -454,7 +452,8 @@ class ElgaCore {
 		}
 		
 		var charIndex:Number = -1; 
-		
+		firstNodeName = clothingName;
+		secondNodeName = "";
 		// move the set title at the end of the name
 		// ie: Venetian Tactical Armor – Military beret
 		// becomes:
